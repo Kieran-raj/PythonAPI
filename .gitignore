@@ -1,2 +1,5 @@
-expenses/
+# Virtual env
+venv/
+
+#User settings
 .vscode/
