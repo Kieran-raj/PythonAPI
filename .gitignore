@@ -3,3 +3,7 @@ venv/
 
 #User settings
 .vscode/
+
+#cache
+api/__pycache__
+api/expenses/__pycache__
