@@ -1,0 +1,25 @@
+{% extends "template.html"%}
+{% block title %} Enter Data {% endblock %}
+{% block content %}
+<h2>Test data</h2>
+<table style="width: 100%">
+  <tr>
+    <th>First Name</th>
+    <th>Last Name</th>
+  </tr>
+  {% for i in data %}
+  <tr>
+    <td>{{ i[0] }}</td>
+    <td>{{ i[1] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<br>
+<p>Enter examples</p>
+<form method="post" , action='/expenses/test_data'>
+  <input type='text' id='firstName' , name='firstName'>
+  <br>
+  <input type='float' id='lastName' , name='lastName'>
+  <input type='submit' value="Submit">
+</form>
+{% endblock %}
