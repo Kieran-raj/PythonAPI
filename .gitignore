@@ -7,3 +7,6 @@ venv/
 #cache
 api/__pycache__
 api/expenses/__pycache__
+
+#example endpoints
+api/examples
