@@ -2,7 +2,8 @@ import os
 import pymysql
 from flask import Flask
 from api import db
-from api.expenses.endpoints import bp
+from api.expenses.endpoints import bp as expenses_blueprint
+from api.examples.endpoints import bp as examples_blueprint
 
 
 def create_app(config="api.config"):
@@ -18,7 +19,8 @@ def create_app(config="api.config"):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
     # Registering Blueprints
-    app.register_blueprint(bp)
+    app.register_blueprint(expenses_blueprint)
+    app.register_blueprint(examples_blueprint)
 
     # Registering and initialising database
 

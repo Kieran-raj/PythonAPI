@@ -9,17 +9,19 @@
   </tr>
   {% for i in data %}
   <tr>
-    <td>{{ i[0] }}</td>
-    <td>{{ i[1] }}</td>
+    <td>{{ i["firstName"] }}</td>
+    <td>{{ i["lastName"] }}</td>
   </tr>
   {% endfor %}
 </table>
 <br>
 <p>Enter examples</p>
-<form method="post" , action='/expenses/test_data'>
+<form method="post" , action='/testing/test_data'>
+  <label for="firstName">First Name:</label>
   <input type='text' id='firstName' , name='firstName'>
   <br>
-  <input type='float' id='lastName' , name='lastName'>
+  <label for="lastName">Last Name:</label>
+  <input type='text' id='lastName' , name='lastName'>
   <input type='submit' value="Submit">
 </form>
 {% endblock %}
