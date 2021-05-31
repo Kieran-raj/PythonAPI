@@ -13,10 +13,10 @@ def home():
 
 @bp.route('/data_base')
 def test():
-    result = db.engine.execute("show tables;")
+    result = db.engine.execute("select * from test_table;")
     for i in result:
         print(i)
-    return {"message": 200}
+    return render_template('test_date.html', context=result)
 
 
 @bp.route('/enter_data', methods=['GET', 'POST'])
