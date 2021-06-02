@@ -30,7 +30,7 @@
 <div>
 	<p>Please enter expenses</p>
 </div>
-<form method="post" , action='/expenses/enter_data'>
+<form method="post" , action='/expenses/home'>
 	<div class="mb-3">
 		<label for="description" class="form-label">Description:</label>
 		<input type='text' class="form-control" id='description' name='description'>
@@ -55,6 +55,7 @@
 	</div>
 	<br>
 	<input type='submit' class="btn btn-primary" value="Submit">
+	<input type="reset" class="btn btn-primary" value="Clear All">
 </form>
 
 {% endblock %}

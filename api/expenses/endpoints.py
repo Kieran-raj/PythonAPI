@@ -8,14 +8,8 @@ from api.templates import *
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 
 
-@bp.route('/', methods=['GET'])
-@bp.route('/home', methods=['GET'])
-def home():
-    if request.method == 'GET':
-        return render_template('welcome_page.html'), 200
-
-
-@bp.route('/enter_data', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/home', methods=['GET', 'POST'])
 def enter_expense():
     if request.method == 'GET':
         data = pd.read_sql(
