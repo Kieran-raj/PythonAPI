@@ -1,11 +1,60 @@
 {% extends "template.html"%}
 {% block title %} Enter Data {% endblock %}
 {% block content %}
-<p>Please enter expenses</p>
-<form>
-	<input type='text' id='expense' , name='expense'>
+<h2>Expense data</h2>
+<div>
+	<table class="table" style="width: 100%">
+		<thead>
+			<tr>
+				<th scope="col">expense_id</th>
+				<th scope="col">date</th>
+				<th scope="col">description</th>
+				<th scope="col">category</th>
+				<th scope="col">amount</th>
+			</tr>
+		</thead>
+		{% for i in data %}
+		<tbody>
+			<tr>
+				<td>{{ i["expense_id"] }}</td>
+				<td>{{ i["date"] }}</td>
+				<td>{{ i["description"] }}</td>
+				<td>{{ i["category"] }}</td>
+				<td>{{ i["amount"] }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+<br>
+<div>
+	<p>Please enter expenses</p>
+</div>
+<form method="post" , action='/expenses/enter_data'>
+	<div class="mb-3">
+		<label for="description" class="form-label">Description:</label>
+		<input type='text' class="form-control" id='description' name='description'>
+	</div>
 	<br>
-	<input type='float' id='price' , name='price'>
-	<input type='submit' value="Submit">
+	<div class="mb-3">
+		<label for="amount" class="form-label">Amount:</label>
+		<input type='text' class="form-control" id='amount' name='amount'>
+	</div>
+	<br>
+	<div class="mb-3">
+		<label for='category' class="form-label">Category:</label>
+		<select name='category' class="form-select">
+			<option value='food'>Food</option>
+			<option value='rent'>Rent</option>
+			<option value='utils'>Utilities</option>
+			<option value='social'>Social</option>
+			<option value='purchases'>Purchases</option>
+			<option value='transport'>Transport</option>
+			<option value='other'>Other</option>
+		</select>
+	</div>
+	<br>
+	<input type='submit' class="btn btn-primary" value="Submit">
 </form>
+
 {% endblock %}
