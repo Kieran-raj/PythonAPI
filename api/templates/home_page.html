@@ -1,16 +1,15 @@
 {% extends "template.html"%}
 {% block title %} Enter Data {% endblock %}
 {% block content %}
-<h2>Expense data</h2>
 <div>
-	<table class="table" style="width: 100%">
+	<table class="table table-hover" style="width: 100%">
 		<thead>
 			<tr>
-				<th scope="col">expense_id</th>
-				<th scope="col">date</th>
-				<th scope="col">description</th>
-				<th scope="col">category</th>
-				<th scope="col">amount</th>
+				<th scope="col">Expense #</th>
+				<th scope="col">Date</th>
+				<th scope="col">Description</th>
+				<th scope="col">Category</th>
+				<th scope="col">Amount</th>
 			</tr>
 		</thead>
 		{% for i in data %}
@@ -24,6 +23,17 @@
 			</tr>
 			{% endfor %}
 		</tbody>
+		<tfoot>
+			<tr>
+				<td colspan="4">Total</td>
+				{% if data %}
+				<td>{{ data[0]['total']}}</td>
+				{% else %}
+				<td>--</td>
+				{% endif %}
+			</tr>
+		</tfoot>
+
 	</table>
 </div>
 <br>
@@ -44,6 +54,7 @@
 	<div class="mb-3">
 		<label for='category' class="form-label">Category:</label>
 		<select name='category' class="form-select">
+			<option value='--'>--</option>
 			<option value='food'>Food</option>
 			<option value='rent'>Rent</option>
 			<option value='utils'>Utilities</option>
@@ -54,7 +65,7 @@
 		</select>
 	</div>
 	<br>
-	<input type='submit' class="btn btn-primary" value="Submit">
+	<input type='submit' name="submit_button" class="btn btn-primary" value="Submit">
 	<input type="reset" class="btn btn-primary" value="Clear All">
 </form>
 
