@@ -1,4 +1,5 @@
 import json
+import re
 import pandas as pd
 from datetime import date
 from flask import Blueprint, current_app as app, request, render_template, url_for
@@ -10,7 +11,7 @@ bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/home', methods=['GET', 'POST'])
-def enter_expense():
+def home():
     if request.method == 'GET':
         data = pd.read_sql(
             "SELECT * FROM expenses;", db.engine)
@@ -44,3 +45,27 @@ def enter_expense():
             data_final = json.loads(data.to_json(orient="records"))
             data_final[0]['total'] = total
             return render_template('home_page.html', data=data_final)
+
+
+@bp.route('/analytics', methods=['GET', 'POST'])
+def analytics():
+    if request.method == 'GET':
+        # sql = f"""
+        # SELECT date, SUM(amount)
+        # FROM expenses_dev.expenses
+        # GROUP BY date
+        # """
+        data = [("01-01-2020", 1597),
+                ("02-01-2020", 1456),
+                ("03-01-2020", 1908),
+                ("04-01-2020", 896),
+                ("05-01-2020", 755),
+                ("06-01-2020", 453),
+                ("07-01-2020", 1100),
+                ("08-01-2020", 1235),
+                ("09-01-2020", 1478)
+                ]
+        labels = [row[0] for row in data]
+        values = [row[1] for row in data]
+
+        return render_template("analytics_page.html", labels=labels, values=values)
