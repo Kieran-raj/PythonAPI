@@ -50,22 +50,17 @@ def home():
 @bp.route('/analytics', methods=['GET', 'POST'])
 def analytics():
     if request.method == 'GET':
-        # sql = f"""
-        # SELECT date, SUM(amount)
-        # FROM expenses_dev.expenses
-        # GROUP BY date
-        # """
-        data = [("01-01-2020", 1597),
-                ("02-01-2020", 1456),
-                ("03-01-2020", 1908),
-                ("04-01-2020", 896),
-                ("05-01-2020", 755),
-                ("06-01-2020", 453),
-                ("07-01-2020", 1100),
-                ("08-01-2020", 1235),
-                ("09-01-2020", 1478)
-                ]
-        labels = [row[0] for row in data]
-        values = [row[1] for row in data]
+        sql = f"""
+        SELECT date, SUM(amount) AS amount
+        FROM expenses_dev.expenses
+        GROUP BY date
+        """
+        df = pd.read_sql(sql, db.engine)
+
+        labels = []
+        values = []
+        for row in df.values:
+            labels.append(row[0].date().strftime("%Y-%m-%d"))
+            values.append(row[1])
 
         return render_template("analytics_page.html", labels=labels, values=values)

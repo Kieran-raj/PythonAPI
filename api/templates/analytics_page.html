@@ -19,12 +19,14 @@
   const ctx = document.getElementById('myChart').getContext('2d');
   const labels = {{ labels | tojson }};
   const values = {{ values | tojson }};
+  console.log(labels)
+  console.log(values)
   const myChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
       datasets: [{
-        label: 'test data set',
+        label: 'Daily Spend (£)',
         data: values,
         borderWidth: 1,
         lineTension: 0.1,
@@ -33,9 +35,11 @@
     },
     options: {
       scales: {
-        y: {
-          beginAtZero: true
-        }
+        yAxes: [{
+          ticks: {
+            beginAtZero: true
+          }
+        }]
       }
     }
   });
