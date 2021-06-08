@@ -1,7 +1,7 @@
 import json
 import re
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 from flask import Blueprint, current_app as app, request, render_template, url_for
 from api import db
 from api.templates import *
@@ -14,7 +14,7 @@ bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 def home():
     if request.method == 'GET':
         data = pd.read_sql(
-            "SELECT * FROM expenses;", db.engine)
+            "SELECT * FROM expenses ORDER by date;", db.engine)
 
         if not data.empty:
             data['date'] = data['date'].dt.strftime('%Y-%m-%d')
@@ -30,16 +30,20 @@ def home():
             description = request.form.get('description')
             amount = request.form.get('amount')
             category = request.form.get('category').capitalize()
-            today = date.today().strftime("%Y-%m-%d")
+            input_date = request.form.get('date')
+            if input_date:
+                final_date = datetime.strptime(input_date, '%Y-%m-%d')
+            else:
+                final_date = date.today().strftime("%Y-%m-%d")
 
             insert_sql = f"""
             INSERT INTO expenses_dev.expenses
             (date, description, category, amount)
-            VALUES ('{today}', '{description}', '{category}', '{float(amount)}');
+            VALUES ('{final_date}', '{description}', '{category}', '{float(amount)}');
             """
             db.engine.execute(insert_sql)
             data = pd.read_sql(
-                "SELECT * FROM expenses;", db.engine)
+                "SELECT * FROM expenses ORDER BY date;", db.engine)
             data['date'] = data['date'].dt.strftime('%Y-%m-%d')
             total = data['amount'].sum()
             data_final = json.loads(data.to_json(orient="records"))
