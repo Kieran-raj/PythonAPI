@@ -42,39 +42,42 @@
 				{% endif %}
 			</tr>
 		</tfoot>
-
 	</table>
 </div>
 <br>
 <div>
-	<p>Please enter expenses</p>
+	<p>New Expense</p>
 </div>
 <form method="post" , action='/expenses/home'>
 	<div class="mb-3">
 		<label for="description" class="form-label">Description:</label>
-		<input type='text' class="form-control" id='description' name='description'>
+		<input type='text' class="form-control" id="description" name="description">
 	</div>
 	<br>
 	<div class="mb-3">
 		<label for="amount" class="form-label">Amount:</label>
-		<input type='text' class="form-control" id='amount' name='amount'>
+		<input type="text" class="form-control" id="amount" name="amount">
 	</div>
 	<br>
 	<div class="mb-3">
-		<label for='category' class="form-label">Category:</label>
-		<select name='category' class="form-select">
-			<option value='--'>--</option>
-			<option value='food'>Food</option>
-			<option value='rent'>Rent</option>
-			<option value='utils'>Utilities</option>
-			<option value='savings'>Savings</option>
-			<option value='social'>Social</option>
-			<option value='purchases'>Purchases</option>
-			<option value='transport'>Transport</option>
-			<option value='other'>Other</option>
+		<label for="category" class="form-label">Category:</label>
+		<select name="category" class="form-select">
+			<option value="--">--</option>
+			<option value="food">Food</option>
+			<option value="rent">Rent</option>
+			<option value="utils">Utilities</option>
+			<option value="savings">Savings</option>
+			<option value="social">Social</option>
+			<option value="purchases">Purchases</option>
+			<option value="transport">Transport</option>
+			<option value="other">Other</option>
 		</select>
 	</div>
 	<br>
+	<div class="mb-3">
+		<label for="data" class="form-label">Date:</label>
+		<input type="text" class="form-control" id="date" name="date" placeholder="(optional)">
+	</div>
 	<input type='submit' name="submit_button" class="btn btn-primary" value="Submit">
 	<input type="reset" class="btn btn-primary" value="Clear All">
 </form>
