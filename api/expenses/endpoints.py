@@ -58,13 +58,18 @@ def analytics():
         SELECT date, SUM(amount) AS amount
         FROM expenses_dev.expenses
         GROUP BY date
+        ORDER by date
         """
         df = pd.read_sql(sql, db.engine)
 
-        labels = []
-        values = []
+        line_labels = []
+        line_values = []
         for row in df.values:
-            labels.append(row[0].date().strftime("%Y-%m-%d"))
-            values.append(row[1])
+            line_labels.append(row[0].date().strftime("%Y-%m-%d"))
+            line_values.append(row[1])
 
-        return render_template("analytics_page.html", labels=labels, values=values)
+        pie_labels = ['20%', '80%']
+        pie_values = [20, 80]
+
+        return render_template("analytics_page.html", line_labels=line_labels, line_values=line_values,
+                               pie_labels=pie_labels, pie_values=pie_values)
