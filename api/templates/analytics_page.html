@@ -1,48 +1,78 @@
 {% extends "template.html"%}
 {% block title %} Home {% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-  <h1 class="h5">Analytics</h1>
-  <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group me-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+<div class="row">
+  <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h5">Analytics</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+      <div class="btn-group me-2">
+        <input type="submit" class="btn btn-sm btn-outline-secondary" value="Share">
+        <input type="submit" class="btn btn-sm btn-outline-secondary" value="Export">
+      </div>
     </div>
   </div>
 </div>
-<div class="col-xs-10 col-sm-6 col-md-6">
-  <div class="chart-container" style="position: relative;">
-    <canvas id="myChart" max-width="50" max-height="50"></canvas>
+<div class="row">
+  <div class="col-xs-6 col-sm-6 col-md-6">
+    <div class="chart-container" style="position: relative;">
+      <canvas id="myLineChart" max-width="50" max-height="50"></canvas>
+      <script>
+        const ctxLine = document.getElementById('myLineChart').getContext('2d');
+        const lineLabels = {{ line_labels | tojson }};
+        const lineValues = {{ line_values | tojson }};
+        const label = 'Daily Spend (£)'
+        console.log(lineLabels)
+        console.log(lineValues)
+        const myLineChart = new Chart(ctxLine, {
+          type: 'line',
+          data: {
+            labels: lineLabels,
+            datasets: [{
+              label: label,
+              data: lineValues,
+              borderWidth: 1,
+              borderColor: '#0d6efd',
+              lineTension: 0.1,
+              fill: false
+            }]
+          },
+          options: {
+            scales: {
+              yAxes: [{
+                ticks: {
+                  beginAtZero: true
+                }
+              }]
+            }
+          }
+        });
+      </script>
+    </div>
+  </div>
+  <div class="col-xs-6 col-sm-6 col-md-6">
+    <div class="chart-container" , style="position: relative;">
+      <canvas id="myPieChart" max-width="50" max-height="50"></canvas>
+      <script>
+        const ctxPie = document.getElementById('myPieChart').getContext('2d');
+        const pieLabels = {{ pie_labels | tojson }};
+        const piePercentages = {{ pie_percentages | tojson }};
+        console.log(pieLabels)
+        console.log(piePercentages)
+        const myPieChart = new Chart(ctxPie, {
+          type: 'pie',
+          data: {
+            labels: pieLabels,
+            datasets: [{
+              data: piePercentages,
+              backgroundColor: ['#0d6efd', '#00ff00', '#ff0000']
+            }]
+          }
+        })
+      </script>
+    </div>
+
   </div>
 </div>
-<script>
-  const ctx = document.getElementById('myChart').getContext('2d');
-  const labels = {{ labels | tojson }};
-  const values = {{ values | tojson }};
-  console.log(labels)
-  console.log(values)
-  const myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Daily Spend (£)',
-        data: values,
-        borderWidth: 1,
-        lineTension: 0.1,
-        fill: false
-      }]
-    },
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            beginAtZero: true
-          }
-        }]
-      }
-    }
-  });
-</script>
+
 
 {% endblock %}
