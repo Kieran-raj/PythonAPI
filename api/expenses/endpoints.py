@@ -1,5 +1,4 @@
 import json
-import re
 import pandas as pd
 from datetime import date, datetime
 from flask import Blueprint, current_app as app, request, render_template, url_for
@@ -54,22 +53,45 @@ def home():
 @bp.route('/analytics', methods=['GET', 'POST'])
 def analytics():
     if request.method == 'GET':
-        sql = f"""
+        sql_expenses = f"""
         SELECT date, SUM(amount) AS amount
         FROM expenses_dev.expenses
         GROUP BY date
         ORDER by date
         """
-        df = pd.read_sql(sql, db.engine)
+        expenses_df = pd.read_sql(sql_expenses, db.engine)
 
         line_labels = []
         line_values = []
-        for row in df.values:
+        for row in expenses_df.values:
             line_labels.append(row[0].date().strftime("%Y-%m-%d"))
             line_values.append(row[1])
 
-        pie_labels = ['20%', '80%']
-        pie_values = [20, 80]
+        sql_savings = """
+        SELECT savings, monthly_income
+        FROM expenses_dev.users
+        """
+
+        savings_df = pd.read_sql(sql_savings, db.engine)
+
+        pie_labels = []
+        pie_values = []
+
+        for col in savings_df:
+            pie_values.append(float(savings_df[col].values))
+            col = col.capitalize().replace('_', ' ')
+            pie_labels.append(col)
+
+        sql_monthly_spend = f"""
+        SELECT MONTH(date) AS month, SUM(amount) AS monthly_sum FROM expenses_dev.expenses
+        GROUP BY MONTH(date)
+        """
+        month_spend_pd = pd.read_sql(sql_monthly_spend, db.engine)
+
+        pie_labels.append('Monthly Spending')
+        pie_values.append(month_spend_pd['monthly_sum'][0])
+
+        pie_percentages = [x / sum(pie_values) * 100 for x in pie_values]
 
         return render_template("analytics_page.html", line_labels=line_labels, line_values=line_values,
-                               pie_labels=pie_labels, pie_values=pie_values)
+                               pie_labels=pie_labels, pie_percentages=pie_percentages)

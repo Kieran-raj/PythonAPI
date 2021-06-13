@@ -6,8 +6,8 @@
     <h1 class="h5">Analytics</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
       <div class="btn-group me-2">
-        <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+        <input type="submit" class="btn btn-sm btn-outline-secondary" value="Share">
+        <input type="submit" class="btn btn-sm btn-outline-secondary" value="Export">
       </div>
     </div>
   </div>
@@ -20,6 +20,7 @@
         const ctxLine = document.getElementById('myLineChart').getContext('2d');
         const lineLabels = {{ line_labels | tojson }};
         const lineValues = {{ line_values | tojson }};
+        const label = 'Daily Spend (£)'
         console.log(lineLabels)
         console.log(lineValues)
         const myLineChart = new Chart(ctxLine, {
@@ -27,9 +28,10 @@
           data: {
             labels: lineLabels,
             datasets: [{
-              label: 'Daily Spend (£)',
+              label: label,
               data: lineValues,
               borderWidth: 1,
+              borderColor: '#0d6efd',
               lineTension: 0.1,
               fill: false
             }]
@@ -53,16 +55,16 @@
       <script>
         const ctxPie = document.getElementById('myPieChart').getContext('2d');
         const pieLabels = {{ pie_labels | tojson }};
-        const pieValues = {{ pie_values | tojson }};
+        const piePercentages = {{ pie_percentages | tojson }};
         console.log(pieLabels)
-        console.log(pieValues)
+        console.log(piePercentages)
         const myPieChart = new Chart(ctxPie, {
           type: 'pie',
           data: {
             labels: pieLabels,
             datasets: [{
-              label: "Label here",
-              data: pieValues
+              data: piePercentages,
+              backgroundColor: ['#0d6efd', '#00ff00', '#ff0000']
             }]
           }
         })
