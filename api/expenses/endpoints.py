@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from flask import Blueprint, current_app as app, request, render_template, url_for
 from api import db
 from api.templates import *
@@ -11,9 +11,17 @@ bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 @bp.route('/', methods=['GET', 'POST'])
 @bp.route('/home', methods=['GET', 'POST'])
 def home():
+    today = datetime.today().date()
+    last_week = today - timedelta(days=7)
+
     if request.method == 'GET':
+        sql = f"""
+        SELECT * FROM expenses_dev.expenses 
+        WHERE date >= '{last_week}' AND date <= '{today}'
+        ORDER by date;
+        """
         data = pd.read_sql(
-            "SELECT * FROM expenses ORDER by date;", db.engine)
+            sql, db.engine)
 
         if not data.empty:
             data['date'] = data['date'].dt.strftime('%Y-%m-%d')
@@ -41,8 +49,13 @@ def home():
             VALUES ('{final_date}', '{description}', '{category}', '{float(amount)}');
             """
             db.engine.execute(insert_sql)
-            data = pd.read_sql(
-                "SELECT * FROM expenses ORDER BY date;", db.engine)
+
+            sql = f"""
+            SELECT * FROM expenses_dev.expenses 
+            WHERE date >= '{last_week}' AND date <= '{today}'
+            ORDER by date;
+            """
+            data = pd.read_sql(sql, db.engine)
             data['date'] = data['date'].dt.strftime('%Y-%m-%d')
             total = data['amount'].sum()
             data_final = json.loads(data.to_json(orient="records"))
