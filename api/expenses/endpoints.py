@@ -98,7 +98,7 @@ def analytics():
             rolling_average.append(row[2])
 
         sql_savings = """
-        SELECT savings, monthly_income
+        SELECT savings
         FROM expenses_dev.users
         """
 
