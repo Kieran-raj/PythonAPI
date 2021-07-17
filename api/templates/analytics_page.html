@@ -15,6 +15,17 @@
 <div class="row">
   <div class="col-xs-6 col-sm-6 col-md-6">
     <div class="chart-container" style="position: relative;">
+      <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle btn-xs" type="button" id="dateCategory" data-bs-toggle="dropdown" aria-expanded="false">
+          <span style="font-size: medium;">Daily</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dateCategory">
+          <li><a class="dropdown-item active" href="#">Weekly</a></li>
+          <li><a class="dropdown-item" href="#">Monthly</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#">Reset</a></li>
+        </ul>
+      </div>
       <canvas id="myLineChart" max-width="50" max-height="50"></canvas>
       <script>
         const ctxLine = document.getElementById('myLineChart').getContext('2d');
