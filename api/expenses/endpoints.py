@@ -73,8 +73,8 @@ def history():
         SELECT * FROM expenses_dev.expenses;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
-
-    pass
+        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        return render_template('history.html', data=json.loads(expenses_df.to_json(orient="records"))), 200
 
 
 @bp.route('/analytics', methods=['GET', 'POST'])
