@@ -56,7 +56,6 @@ def home():
             ORDER by date;
             """
             data = pd.read_sql(sql, db.engine)
-            # Issue when sql returns no data
             if not data.empty:
                 data['date'] = data['date'].dt.strftime('%Y-%m-%d')
                 total = data['amount'].sum()
