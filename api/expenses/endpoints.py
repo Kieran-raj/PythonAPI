@@ -56,11 +56,15 @@ def home():
             ORDER by date;
             """
             data = pd.read_sql(sql, db.engine)
-            data['date'] = data['date'].dt.strftime('%Y-%m-%d')
-            total = data['amount'].sum()
-            data_final = json.loads(data.to_json(orient="records"))
-            data_final[0]['total'] = total
-            return render_template('home_page.html', data=data_final)
+            # Issue when sql returns no data
+            if not data.empty:
+                data['date'] = data['date'].dt.strftime('%Y-%m-%d')
+                total = data['amount'].sum()
+                data_final = json.loads(data.to_json(orient="records"))
+                data_final[0]['total'] = total
+                return render_template('home_page.html', data=data_final)
+            else:
+                return render_template('home_page.html', data=json.loads(data.to_json(orient="records"))), 200
 
 
 @bp.route('/analytics', methods=['GET', 'POST'])
