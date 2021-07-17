@@ -66,6 +66,17 @@ def home():
                 return render_template('home_page.html', data=json.loads(data.to_json(orient="records"))), 200
 
 
+@bp.route('/history', methods=['GET', 'POST'])
+def history():
+    if request.method == 'GET':
+        sql_history = f"""
+        SELECT * FROM expenses_dev.expenses;
+        """
+        expenses_df = pd.read_sql(sql_history, db.engine)
+        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        return render_template('history.html', data=json.loads(expenses_df.to_json(orient="records"))), 200
+
+
 @bp.route('/analytics', methods=['GET', 'POST'])
 def analytics():
     if request.method == 'GET':
@@ -73,7 +84,7 @@ def analytics():
         SELECT date, SUM(amount) AS amount
         FROM expenses_dev.expenses
         GROUP BY date
-        ORDER by date
+        ORDER by date;
         """
         expenses_df = pd.read_sql(sql_expenses, db.engine)
 
