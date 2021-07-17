@@ -20,7 +20,7 @@
         const ctxLine = document.getElementById('myLineChart').getContext('2d');
         const lineLabels = {{ line_labels | tojson }};
         const lineValues = {{ line_values | tojson }};
-        const label = 'Daily Spend (£)'
+        const rollingValues = {{ rolling_values | tojson }};
         console.log(lineLabels)
         console.log(lineValues)
         const myLineChart = new Chart(ctxLine, {
@@ -28,10 +28,18 @@
           data: {
             labels: lineLabels,
             datasets: [{
-              label: label,
+              label: 'Daily Spend (£)',
               data: lineValues,
               borderWidth: 1,
               borderColor: '#0d6efd',
+              lineTension: 0.1,
+              fill: false
+            },
+            {
+              label: 'Moving Average (£)',
+              data: rollingValues,
+              borderWidth: 1,
+              borderColor: '#FB4629',
               lineTension: 0.1,
               fill: false
             }]
@@ -64,7 +72,7 @@
             labels: pieLabels,
             datasets: [{
               data: piePercentages,
-              backgroundColor: ['#0d6efd', '#00ff00', '#ff0000']
+              backgroundColor: ['#0d6efd', '#00ff00', '#FB4629']
             }]
           }
         })
