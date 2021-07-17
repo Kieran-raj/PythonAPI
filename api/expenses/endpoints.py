@@ -87,12 +87,15 @@ def analytics():
         ORDER by date;
         """
         expenses_df = pd.read_sql(sql_expenses, db.engine)
+        expenses_df['MA'] = expenses_df.rolling(window=2)['amount'].mean()
 
         line_labels = []
-        line_values = []
+        line_values_amount = []
+        rolling_average = []
         for row in expenses_df.values:
             line_labels.append(row[0].date().strftime("%Y-%m-%d"))
-            line_values.append(row[1])
+            line_values_amount.append(row[1])
+            rolling_average.append(row[2])
 
         sql_savings = """
         SELECT savings, monthly_income
@@ -120,5 +123,6 @@ def analytics():
 
         pie_percentages = [x / sum(pie_values) * 100 for x in pie_values]
 
-        return render_template("analytics_page.html", line_labels=line_labels, line_values=line_values,
-                               pie_labels=pie_labels, pie_percentages=pie_percentages)
+        return render_template("analytics_page.html", line_labels=line_labels, line_values=line_values_amount,
+                               rolling_values=rolling_average, pie_labels=pie_labels,
+                               pie_percentages=pie_percentages)
