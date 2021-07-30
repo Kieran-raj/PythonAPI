@@ -74,7 +74,10 @@ def history():
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-        return render_template('history.html', data=json.loads(expenses_df.to_json(orient="records"))), 200
+        total = expenses_df['amount'].sum()
+        data_final = json.loads(expenses_df.to_json(orient="records"))
+        data_final[0]['total'] = total
+        return render_template('history.html', data=data_final), 200
 
 
 @bp.route('/analytics', methods=['GET', 'POST'])
