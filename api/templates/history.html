@@ -4,11 +4,14 @@
 {% endblock %}
 {% block content %}
 <style>
-  body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-  }
+	.my-custom-scrollbar {
+		position: relative;
+		height: 750px;
+		overflow: auto;
+	}
+	.table-wrapper-scroll-y {
+	display: block;
+	}
 </style>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
 	<h1 class="h5">Full History</h1>
@@ -19,7 +22,7 @@
 		</div>
 	</div>
 </div>
-<div>
+<div class="table-wrapper-scroll-y my-custom-scrollbar">
 	<table class="table table-hover" style="width: 100%">
 		<thead>
 			<tr>
@@ -53,4 +56,5 @@
 		</tfoot>
 	</table>
 </div>
+<!-- Sort out total staying still and maybe add the number of entries wanted-->
 {% endblock %}
