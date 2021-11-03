@@ -60,5 +60,5 @@ def full_data():
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        data_final[0]['total'] = total
-        return {'data': data_final}
+        data_final.insert(0, {'total': total})
+        return {'data': data_final}, 200
