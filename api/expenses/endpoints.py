@@ -58,9 +58,8 @@ def full_data():
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-        # total = expenses_df['amount'].sum()
+        total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        # data_final.insert(0, {'total': total})
-        response = jsonify(data=data_final)
+        response = jsonify(data={"total": total,"transactions":data_final})
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response, 200
