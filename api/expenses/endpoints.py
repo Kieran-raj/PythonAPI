@@ -105,4 +105,18 @@ def filter_data():
         response = jsonify(data={"total": total,"transactions":data_final})
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response, 200
-        
+
+
+@bp.route('/get_daily_amounts', methods=['GET'])
+def get_amounts():
+    sql_query = """
+    SELECT date, SUM(amount) FROM expenses_dev.expenses
+    GROUP BY date
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+    expenses_df.rename(columns={"SUM(amount)": "amount"}, inplace=True)
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"transaction":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
