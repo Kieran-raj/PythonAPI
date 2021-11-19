@@ -1,4 +1,5 @@
 import json
+import calendar
 from datetime import date, datetime, timedelta
 import pandas as pd
 from flask import Blueprint, request, jsonify
@@ -108,14 +109,40 @@ def filter_data():
 
 
 @bp.route('/get_daily_amounts', methods=['GET'])
-def get_amounts():
+def get_daily_amounts():
     sql_query = """
-    SELECT date, SUM(amount) FROM expenses_dev.expenses
+    SELECT date, SUM(amount) as amount FROM expenses_dev.expenses
     GROUP BY date
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-    expenses_df.rename(columns={"SUM(amount)": "amount"}, inplace=True)
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"transaction":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
+
+
+@bp.route('/get_monthly_amounts', methods=['GET'])
+def get_monthly_amounts():
+    sql_query = """
+    SELECT MONTH(date) as month, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY MONTH(date)
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"transaction":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
+
+
+@bp.route('/get_categorical_amounts', methods=['GET'])
+def get_categorical_amount():
+    sql_query = """
+    SELECT category, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY category
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
     response = jsonify(data={"transaction":data_final})
     response.headers.add("Access-Control-Allow-Origin", "*")
