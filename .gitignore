@@ -10,3 +10,6 @@ api/expenses/__pycache__
 
 #example endpoints
 api/examples
+
+#pychace
+__pycache__

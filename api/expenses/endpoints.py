@@ -1,4 +1,5 @@
 import json
+import calendar
 from datetime import date, datetime, timedelta
 import pandas as pd
 from flask import Blueprint, request, jsonify
@@ -63,3 +64,99 @@ def full_data():
         response = jsonify(data={"total": total,"transactions":data_final})
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response, 200
+
+
+@bp.route('/full_data/all_years', methods=['GET'])
+def full_data_all_years():
+    if request.method == 'GET':
+        sql_query = """
+        SELECT DISTINCT YEAR(date) as years FROM expenses_dev.expenses
+        """
+        expenses_df = pd.read_sql(sql_query, db.engine)
+        data_final = expenses_df["years"].values.tolist()
+        response = jsonify(data={"years":data_final})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 200
+
+
+@bp.route('/filtered_data', methods=['GET'])
+def filter_data():
+    # start, end and category
+    # start and end work
+    start_date = request.args.get('startDate', default='')
+    end_date = request.args.get('endDate', default='')
+    category = request.args.get('category', default='')
+    if request.method == "GET":
+        if category != '':
+            sql_query = f"""
+            SELECT * FROM expenses_dev.expenses
+            WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
+            AND category='{category}'"""
+        elif category == '':
+            sql_query = f"""
+            SELECT * FROM expenses_dev.expenses
+            WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
+            """
+        elif start_date == '' & end_date == '':
+            sql_query = f"""
+            SELECT * FROM expenses_dev.expenses
+            WHERE category='{category}'
+            """
+        elif end_date == '':
+            sql_query = f"""
+            SELECT * FROM expenses_dev.expenses
+            WHERE (DATE(date) BETWEEN '{start_date}' AND MAX(date))
+            """
+        elif start_date == '':
+            sql_query = f"""
+            SELECT * FROM expenses_dev.expenses
+            WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
+            """
+        expenses_df = pd.read_sql(sql_query, db.engine)
+        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        total = expenses_df['amount'].sum()
+        data_final = json.loads(expenses_df.to_json(orient="records"))
+        response = jsonify(data={"total": total,"transactions":data_final})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 200
+
+
+@bp.route('/get_daily_amounts', methods=['GET'])
+def get_daily_amounts():
+    sql_query = """
+    SELECT date, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY date
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"dailyAmounts":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
+
+
+@bp.route('/get_monthly_amounts', methods=['GET'])
+def get_monthly_amounts():
+    sql_query = """
+    SELECT MONTH(date) as month, YEAR(date) as year, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY MONTH(date), YEAR(date)
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"monthlyAmounts":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
+
+
+@bp.route('/get_categorical_amounts', methods=['GET'])
+def get_categorical_amount():
+    sql_query = """
+    SELECT category, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY category
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"categoricalAmounts":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
