@@ -66,6 +66,19 @@ def full_data():
         return response, 200
 
 
+@bp.route('/full_data/all_years', methods=['GET'])
+def full_data_all_years():
+    if request.method == 'GET':
+        sql_query = """
+        SELECT DISTINCT YEAR(date) as years FROM expenses_dev.expenses
+        """
+        expenses_df = pd.read_sql(sql_query, db.engine)
+        data_final = expenses_df["years"].values.tolist()
+        response = jsonify(data={"years":data_final})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 200
+
+
 @bp.route('/filtered_data', methods=['GET'])
 def filter_data():
     # start, end and category
@@ -117,7 +130,7 @@ def get_daily_amounts():
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"transaction":data_final})
+    response = jsonify(data={"dailyAmounts":data_final})
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response, 200
 
@@ -125,13 +138,13 @@ def get_daily_amounts():
 @bp.route('/get_monthly_amounts', methods=['GET'])
 def get_monthly_amounts():
     sql_query = """
-    SELECT MONTH(date) as month, SUM(amount) as amount FROM expenses_dev.expenses
-    GROUP BY MONTH(date)
+    SELECT MONTH(date) as month, YEAR(date) as year, SUM(amount) as amount FROM expenses_dev.expenses
+    GROUP BY MONTH(date), YEAR(date)
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"transaction":data_final})
+    response = jsonify(data={"monthlyAmounts":data_final})
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response, 200
 
@@ -144,6 +157,6 @@ def get_categorical_amount():
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"transaction":data_final})
+    response = jsonify(data={"categoricalAmounts":data_final})
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response, 200
