@@ -61,13 +61,12 @@ def full_data():
         ORDER BY date;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
-        if expenses_df:
-            expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-            total = expenses_df['amount'].sum()
-            data_final = json.loads(expenses_df.to_json(orient="records"))
-            response = jsonify(data={"total": total,"transactions":data_final})
-            response.headers.add("Access-Control-Allow-Origin", "*")
-            return response, 200
+        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        total = expenses_df['amount'].sum()
+        data_final = json.loads(expenses_df.to_json(orient="records"))
+        response = jsonify(data={"total": total,"transactions":data_final})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 200
 
 
 @bp.route('/full_data/all_years', methods=['GET'])
