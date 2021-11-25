@@ -1,3 +1,5 @@
+# TODO: Add some docstrings all functions
+
 import json
 import calendar
 from datetime import date, datetime, timedelta
@@ -85,6 +87,7 @@ def full_data_all_years():
 def filter_data():
     # start, end and category
     # start and end work
+    # TODO: Make sure that all combinations are working
     start_date = request.args.get('startDate', default='')
     end_date = request.args.get('endDate', default='')
     category = request.args.get('category', default='')
