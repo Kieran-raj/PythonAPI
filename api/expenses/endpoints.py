@@ -55,15 +55,17 @@ def weekly_data():
 def full_data():
     if request.method == 'GET':
         sql_history = """
-        SELECT * FROM expenses_dev.expenses;
+        SELECT * FROM expenses_dev.expenses
+        ORDER BY date;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
-        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-        total = expenses_df['amount'].sum()
-        data_final = json.loads(expenses_df.to_json(orient="records"))
-        response = jsonify(data={"total": total,"transactions":data_final})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response, 200
+        if expenses_df:
+            expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+            total = expenses_df['amount'].sum()
+            data_final = json.loads(expenses_df.to_json(orient="records"))
+            response = jsonify(data={"total": total,"transactions":data_final})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 200
 
 
 @bp.route('/full_data/all_years', methods=['GET'])
@@ -91,26 +93,31 @@ def filter_data():
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
             WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
-            AND category='{category}'"""
+            AND category='{category}'
+            ORDER BY date"""
         elif category == '':
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
             WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
+            ORDER BY date
             """
         elif start_date == '' & end_date == '':
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
             WHERE category='{category}'
+            ORDER BY date
             """
         elif end_date == '':
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
             WHERE (DATE(date) BETWEEN '{start_date}' AND MAX(date))
+            ORDER BY date
             """
         elif start_date == '':
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
             WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
+            ORDER BY date
             """
         expenses_df = pd.read_sql(sql_query, db.engine)
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
@@ -126,6 +133,7 @@ def get_daily_amounts():
     sql_query = """
     SELECT date, SUM(amount) as amount FROM expenses_dev.expenses
     GROUP BY date
+    ORDER BY date
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
