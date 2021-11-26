@@ -145,6 +145,44 @@ def get_daily_amounts():
     return response, 200
 
 
+@bp.route('/get_weekly_amounts', methods=['GET'])
+def get_weekly_amounts():
+    sql_query = """
+    SELECT
+        week,
+        year,
+        SUM(amount) as amount
+    FROM (
+        SELECT
+            expense_id,
+            WEEK(date) as week,
+            amount
+        FROM
+            expenses
+        ) AS weekly_data
+        LEFT JOIN (
+        SELECT
+            expense_id,
+            YEAR(date) as 'year'
+        FROM
+            expenses
+        ) AS years
+    ON (
+        weekly_data.expense_id = years.expense_id
+    )
+    GROUP BY
+        week,
+        year
+    ORDER BY 
+        week;
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    response = jsonify(data={"weeklyAmounts":data_final})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response, 200
+
+
 @bp.route('/get_monthly_amounts', methods=['GET'])
 def get_monthly_amounts():
     sql_query = """
