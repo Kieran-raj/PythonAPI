@@ -13,3 +13,6 @@ api/examples
 
 #pychace
 __pycache__
+
+#environmental variables
+.env
