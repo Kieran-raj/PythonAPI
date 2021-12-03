@@ -194,8 +194,16 @@ def get_weekly_amounts():
 @bp.route('/get_monthly_amounts', methods=['GET'])
 def get_monthly_amounts():
     sql_query = """
-    SELECT MONTH(date) as month, YEAR(date) as year, SUM(amount) as amount FROM expenses_dev.expenses
-    GROUP BY MONTH(date), YEAR(date)
+    SELECT 
+        MONTH(date) as month, 
+        YEAR(date) as year, 
+        SUM(amount) as amount 
+    FROM expenses_dev.expenses
+    GROUP BY 
+        MONTH(date), 
+        YEAR(date)
+    ORDER BY 
+        MONTH(date)
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
