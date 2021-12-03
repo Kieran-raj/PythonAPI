@@ -1,6 +1,6 @@
 from api.app import create_app
 
-# TODO: Allow for environment to be specified when running create app 
+# TODO: Allow for environment to be specified when running create app
 # eg `python create_app.py --env developement`
 # if --env == development: config = api.config.DevConfig
 

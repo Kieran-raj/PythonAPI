@@ -3,9 +3,11 @@
 import json
 import calendar
 from datetime import date, datetime, timedelta
+from operator import ge
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
+from ..expenses.helpers.functions import generate_response
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 
@@ -91,6 +93,10 @@ def filter_data():
     end_date = request.args.get('endDate', default='')
     category = request.args.get('category', default='')
     if request.method == "GET":
+        if not start_date and not end_date and not category:
+            return_json_object = jsonify(message="startDate, endDate and category are missing")
+            return generate_response(return_json_object, 400)
+
         if category != '':
             sql_query = f"""
             SELECT * FROM expenses_dev.expenses
@@ -121,13 +127,17 @@ def filter_data():
             WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
             ORDER BY date
             """
+                  
         expenses_df = pd.read_sql(sql_query, db.engine)
+
+        if expenses_df.empty:
+            return generate_response('', 204)
+
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        response = jsonify(data={"total": total,"transactions":data_final})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response, 200
+        return_json_object = jsonify(data={"total": total,"transactions":data_final})
+        return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_daily_amounts', methods=['GET'])
@@ -140,9 +150,8 @@ def get_daily_amounts():
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"dailyAmounts":data_final})
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response, 200
+    return_json_object = jsonify(data={"dailyAmounts":data_final})
+    return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_weekly_amounts', methods=['GET'])
@@ -178,9 +187,8 @@ def get_weekly_amounts():
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"weeklyAmounts":data_final})
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response, 200
+    return_json_object = jsonify(data={"weeklyAmounts":data_final})
+    return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_monthly_amounts', methods=['GET'])
@@ -192,9 +200,8 @@ def get_monthly_amounts():
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"monthlyAmounts":data_final})
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response, 200
+    return_json_object = jsonify(data={"monthlyAmounts":data_final})
+    return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_categorical_amounts', methods=['GET'])
@@ -205,6 +212,5 @@ def get_categorical_amount():
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    response = jsonify(data={"categoricalAmounts":data_final})
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response, 200
+    return_response_object = jsonify(data={"categoricalAmounts":data_final})
+    return generate_response(return_response_object, 200)
