@@ -17,7 +17,7 @@ class ProdConfig:
     TESTING = False
 
     """Set SQL_ALCHEMY Variables"""
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{database_username}:{database_password}@{database_ip}:{database_port}/{database}_proc"
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{database_username}:{database_password}@{database_ip}:{database_port}/{database}_prod"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 
