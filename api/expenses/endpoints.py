@@ -2,58 +2,12 @@
 
 import json
 import calendar
-from datetime import date, datetime, timedelta
-from operator import ge
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
 from ..expenses.helpers.functions import generate_response
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
-
-
-@bp.route('/weekly_data', methods=['GET', 'POST'])
-def weekly_data():
-    today = datetime.today().date()
-    last_week = today - timedelta(days=7)
-
-    if request.method == 'GET':
-        sql = f"""
-        SELECT * FROM expenses_dev.expenses 
-        WHERE date >= '{last_week}' AND date <= '{today}'
-        ORDER by date;
-        """
-        data = pd.read_sql(
-            sql, db.engine)
-
-        if not data.empty:
-            data['date'] = data['date'].dt.strftime('%Y-%m-%d')
-            total = data['amount'].sum()
-            data_final = json.loads(data.to_json(orient="records"))
-            data_final[0]['total'] = total
-            return {"data": data_final}, 200
-        return {"data": data}, 200
-
-    if request.method == 'POST':
-        if request.form['submit_button'] == 'Submit':
-            description = request.form.get('description')
-            amount = request.form.get('amount')
-            category = request.form.get('category').capitalize()
-            input_date = request.form.get('date')
-            if input_date:
-                final_date = datetime.strptime(input_date, '%Y-%m-%d')
-            else:
-                final_date = date.today().strftime("%Y-%m-%d")
-
-            insert_sql = f"""
-            INSERT INTO expenses_dev.expenses
-            (date, description, category, amount)
-            VALUES ('{final_date}', '{description}', '{category}', '{float(amount)}');
-            """
-            db.engine.execute(insert_sql)
-
-            return {'message': 'Expense has been added'}, 201
-
 
 @bp.route('/full_data', methods=['GET', 'POST'])
 def full_data():
@@ -66,10 +20,10 @@ def full_data():
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        response = jsonify(data={"total": total,"transactions":data_final})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response, 200
+        return_json_object = jsonify(data={"total": total,"transactions":data_final})
+        return generate_response(return_json_object, 200)
 
+# TODO: Be able to pass specific years and get all data for that
 
 @bp.route('/full_data/all_years', methods=['GET'])
 def full_data_all_years():
@@ -79,9 +33,8 @@ def full_data_all_years():
         """
         expenses_df = pd.read_sql(sql_query, db.engine)
         data_final = expenses_df["years"].values.tolist()
-        response = jsonify(data={"years":data_final})
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response, 200
+        return_json_object = jsonify(data={"years":data_final})
+        return generate_response(return_json_object, 200)
 
 
 @bp.route('/filtered_data', methods=['GET'])
