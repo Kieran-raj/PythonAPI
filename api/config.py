@@ -28,7 +28,7 @@ class TestConfig:
     TESTING = True
 
     """Set SQL_ALCHEMY Variables"""
-    SQLALCHEMY_DATABASE_URI = 'sqlite:////absolute/path/to/foo.db'
+    SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\testing_database\\expenses_test.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 

@@ -1,40 +1,52 @@
 # TODO: Add some docstrings all functions
 
 import json
-import calendar
+import calendar # TODO: used for error handling
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
+from api import chosen_config
 from ..expenses.helpers.functions import generate_response
 
+
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
+config = chosen_config[11:]
+
+expenses_table = "expenses_prod.expenses"
+if config == "DevConfig":
+    expenses_table = "expenses_dev.expenses"
+else:
+    expenses_table = "expenses"
 
 @bp.route('/full_data', methods=['GET', 'POST'])
 def full_data():
     if request.method == 'GET':
-        sql_history = """
-        SELECT * FROM expenses_dev.expenses
+        sql_history = f"""
+        SELECT * FROM {expenses_table}
         ORDER BY date;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
-        expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        try:
+            expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+        except AttributeError:
+            expenses_df['date'] = expenses_df['date'][:10]
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
         return_json_object = jsonify(data={"total": total,"transactions":data_final})
         return generate_response(return_json_object, 200)
 
 # TODO: Be able to pass specific years and get all data for that
+# Will probably need a new end point for that eg /full_data/year
 
 @bp.route('/full_data/all_years', methods=['GET'])
 def full_data_all_years():
-    if request.method == 'GET':
-        sql_query = """
-        SELECT DISTINCT YEAR(date) as years FROM expenses_dev.expenses
-        """
-        expenses_df = pd.read_sql(sql_query, db.engine)
-        data_final = expenses_df["years"].values.tolist()
-        return_json_object = jsonify(data={"years":data_final})
-        return generate_response(return_json_object, 200)
+    sql_query = """
+    SELECT DISTINCT YEAR(date) as years FROM expenses_dev.expenses
+    """
+    expenses_df = pd.read_sql(sql_query, db.engine)
+    data_final = expenses_df["years"].values.tolist()
+    return_json_object = jsonify(data={"years":data_final})
+    return generate_response(return_json_object, 200)
 
 
 @bp.route('/filtered_data', methods=['GET'])
@@ -80,7 +92,7 @@ def filter_data():
             WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
             ORDER BY date
             """
-                  
+        
         expenses_df = pd.read_sql(sql_query, db.engine)
 
         if expenses_df.empty:
@@ -104,6 +116,23 @@ def get_daily_amounts():
     expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"dailyAmounts":data_final})
+    return generate_response(return_json_object, 200)
+
+
+@bp.route('/get_daily_amounts/moving_average', methods=['GET'])
+def moving_average():
+    ### Pass in window=1 for example
+    url_parameters = request.args
+    window = 1
+    if url_parameters:
+        window = url_parameters.get('window')
+
+        if len(url_parameters) > 1:
+            return generate_response(jsonify(message='Too many parameters. Only supply window size'), 400)
+        if window is None:
+            return generate_response(jsonify(message=f'Invalid parameter - {", ".join([key for key in url_parameters.keys()])}'), 400)
+
+    return_json_object = jsonify(data="Data (default window)")
     return generate_response(return_json_object, 200)
 
 
