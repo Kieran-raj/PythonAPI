@@ -1,12 +1,14 @@
 # TODO: Add some docstrings all functions
 
 import json
-import calendar # TODO: used for error handling
+import calendar
+from flask.wrappers import Response
+from sqlalchemy import exc # TODO: used for error handling
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
 from api import chosen_config
-from ..expenses.helpers.functions import generate_response
+from ..expenses.helpers.functions import generate_response, convert_datetype_to_string
 
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
@@ -18,18 +20,21 @@ if config == "DevConfig":
 else:
     expenses_table = "expenses"
 
+
+@bp.route('/heartbeat', methods=['GET'])
+def heartbeat():
+    return generate_response(jsonify(message="API working"), 200)
+
+
 @bp.route('/full_data', methods=['GET', 'POST'])
-def full_data():
+def full_data() -> Response:
     if request.method == 'GET':
         sql_history = f"""
         SELECT * FROM {expenses_table}
         ORDER BY date;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
-        try:
-            expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
-        except AttributeError:
-            expenses_df['date'] = expenses_df['date'][:10]
+        expenses_df = convert_datetype_to_string(expenses_df, 'date')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
         return_json_object = jsonify(data={"total": total,"transactions":data_final})
@@ -113,7 +118,7 @@ def get_daily_amounts():
     ORDER BY date
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
-    expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
+    expenses_df = convert_datetype_to_string(expenses_df, 'date')
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"dailyAmounts":data_final})
     return generate_response(return_json_object, 200)
