@@ -12,5 +12,5 @@ def convert_datetype_to_string(
     try:
         df[date_column_name] = df[date_column_name].dt.strftime('%Y-%m-%d')
     except AttributeError:
-        df[date_column_name] = df[date_column_name][10:]
+        df[date_column_name] = df[date_column_name]
     return df
