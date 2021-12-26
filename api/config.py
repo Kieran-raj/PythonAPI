@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class ProdConfig:
     """Get environmental variables"""
     database_username = environ.get("DATABASE_USERNAME")
@@ -28,7 +29,8 @@ class TestConfig:
     TESTING = True
 
     """Set SQL_ALCHEMY Variables"""
-    SQLALCHEMY_DATABASE_URI = 'sqlite:////absolute/path/to/foo.db'
+    # SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\testing_database\\expenses_test.db"
+    SQLALCHEMY_DATABASE_URI = "sqlite:////home/kieran/PythonAPI/api/tests/expenses/testing_database/expenses_test.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 
