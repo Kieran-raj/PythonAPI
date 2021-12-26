@@ -50,6 +50,11 @@ def full_data_all_years():
     sql_query = f"""
     SELECT DISTINCT YEAR(date) as years FROM {expenses_table}
     """
+    if config == "TestConfig":
+        sql_query = f"""
+        SELECT DISTINCT strftime('%Y', date) as years FROM {expenses_table}
+        """
+    print(sql_query)
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = expenses_df["years"].values.tolist()
     return_json_object = jsonify(data={"years": data_final})
@@ -196,9 +201,22 @@ def get_monthly_amounts():
     ORDER BY 
         MONTH(date)
     """
+    if config == "TestConfig":
+        sql_query = f"""
+        SELECT
+            strftime('%m', date) as month,
+            strftime('%Y', date) as year,
+            SUM(amount) as amount
+        FROM {expenses_table}
+        GROUP BY
+            month,
+            year
+        ORDER BY month
+        """
     expenses_df = pd.read_sql(sql_query, db.engine)
+    print(expenses_df['month'])
     expenses_df['month'] = expenses_df['month'].apply(
-        lambda x: calendar.month_name[x])
+        lambda x: calendar.month_name[int(x)])
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"monthlyAmounts": data_final})
     return generate_response(return_json_object, 200)
