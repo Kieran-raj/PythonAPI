@@ -1,3 +1,4 @@
+from sys import platform
 from os import environ
 from dotenv import load_dotenv
 
@@ -29,8 +30,10 @@ class TestConfig:
     TESTING = True
 
     """Set SQL_ALCHEMY Variables"""
-    # SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\testing_database\\expenses_test.db"
-    SQLALCHEMY_DATABASE_URI = "sqlite:////home/kieran/PythonAPI/api/tests/expenses/testing_database/expenses_test.db"
+    if platform == "linux":
+        SQLALCHEMY_DATABASE_URI = "sqlite:////home/kieran/PythonAPI/api/tests/expenses/testing_database/expenses_test.db"
+    else:
+        SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\testing_database\\expenses_test.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 

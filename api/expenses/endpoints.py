@@ -181,6 +181,36 @@ def get_weekly_amounts():
     ORDER BY 
         week;
     """
+    if config == "TestConfig":
+        sql_query = f"""
+        SELECT
+            week,
+            year,
+            SUM(amount) as amount
+        FROM (
+            SELECT
+                expenses_id,
+                strftime('%W', date) as week,
+                amount
+            FROM
+                {expenses_table}
+            ) AS weekly_data
+            LEFT JOIN (
+            SELECT
+                expenses_id,
+                strftime('%Y', date) as 'year'
+            FROM
+                {expenses_table}
+            ) AS years
+        ON (
+            weekly_data.expenses_id = years.expenses_id
+        )
+        GROUP BY
+            week,
+            year
+        ORDER BY
+            week
+        """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"weeklyAmounts": data_final})
