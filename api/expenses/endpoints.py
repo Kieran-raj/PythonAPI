@@ -34,6 +34,10 @@ def full_data() -> Response:
         ORDER BY date;
         """
         expenses_df = pd.read_sql(sql_history, db.engine)
+
+        if expenses_df.empty:
+            return generate_response('', 204)
+
         expenses_df = convert_datetype_to_string(expenses_df, 'date')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
@@ -54,8 +58,11 @@ def full_data_all_years():
         sql_query = f"""
         SELECT DISTINCT strftime('%Y', date) as years FROM {expenses_table}
         """
-    print(sql_query)
     expenses_df = pd.read_sql(sql_query, db.engine)
+
+    if expenses_df.empty:
+        return generate_response('', 204)
+
     data_final = expenses_df["years"].values.tolist()
     return_json_object = jsonify(data={"years": data_final})
     return generate_response(return_json_object, 200)
@@ -127,6 +134,10 @@ def get_daily_amounts():
     ORDER BY date
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
+
+    if expenses_df.empty:
+        return generate_response('', 204)
+
     expenses_df = convert_datetype_to_string(expenses_df, 'date')
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"dailyAmounts": data_final})
@@ -212,6 +223,10 @@ def get_weekly_amounts():
             week
         """
     expenses_df = pd.read_sql(sql_query, db.engine)
+
+    if expenses_df.empty:
+        return generate_response('', 204)
+
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"weeklyAmounts": data_final})
     return generate_response(return_json_object, 200)
@@ -244,7 +259,10 @@ def get_monthly_amounts():
         ORDER BY month
         """
     expenses_df = pd.read_sql(sql_query, db.engine)
-    print(expenses_df['month'])
+
+    if expenses_df.empty:
+        return generate_response('', 204)
+
     expenses_df['month'] = expenses_df['month'].apply(
         lambda x: calendar.month_name[int(x)])
     data_final = json.loads(expenses_df.to_json(orient="records"))
@@ -259,6 +277,10 @@ def get_categorical_amount():
     GROUP BY category
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
+
+    if expenses_df.empty:
+        return generate_response('', 204)
+
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_response_object = jsonify(data={"categoricalAmounts": data_final})
     return generate_response(return_response_object, 200)
