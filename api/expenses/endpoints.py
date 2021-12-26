@@ -1,7 +1,9 @@
 # TODO: Add some docstrings all functions
+# TODO: Use an ORM instead of having multiple SQL databases - syntax then wont matter
 
 import json
 import calendar
+import re
 from flask.wrappers import Response
 from sqlalchemy import exc  # TODO: used for error handling
 import pandas as pd
@@ -133,6 +135,15 @@ def get_daily_amounts():
     GROUP BY date
     ORDER BY date
     """
+    url_parameters = request.args
+    if url_parameters:
+        start_date = url_parameters.get('start_date')
+        end_date = url_parameters.get('end_date')
+        if len(url_parameters > 2):
+            return generate_response(jsonify(message='Too many parameters. Options - start_date and end_date'), 400)
+        if (start_date is None) and (end_date is None):
+            return generate_response(jsonify(message=f'Invalid parameter - {", ".join([key for key in url_parameters.keys()])}'), 400)
+
     expenses_df = pd.read_sql(sql_query, db.engine)
 
     if expenses_df.empty:
