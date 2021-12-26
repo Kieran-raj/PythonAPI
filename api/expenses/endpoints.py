@@ -3,7 +3,7 @@
 import json
 import calendar
 from flask.wrappers import Response
-from sqlalchemy import exc # TODO: used for error handling
+from sqlalchemy import exc  # TODO: used for error handling
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
@@ -37,20 +37,22 @@ def full_data() -> Response:
         expenses_df = convert_datetype_to_string(expenses_df, 'date')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        return_json_object = jsonify(data={"total": total,"transactions":data_final})
+        return_json_object = jsonify(
+            data={"total": total, "transactions": data_final})
         return generate_response(return_json_object, 200)
 
 # TODO: Be able to pass specific years and get all data for that
 # Will probably need a new end point for that eg /full_data/year
 
+
 @bp.route('/full_data/all_years', methods=['GET'])
 def full_data_all_years():
-    sql_query = """
-    SELECT DISTINCT YEAR(date) as years FROM expenses_dev.expenses
+    sql_query = f"""
+    SELECT DISTINCT YEAR(date) as years FROM {expenses_table}
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = expenses_df["years"].values.tolist()
-    return_json_object = jsonify(data={"years":data_final})
+    return_json_object = jsonify(data={"years": data_final})
     return generate_response(return_json_object, 200)
 
 
@@ -64,40 +66,41 @@ def filter_data():
     category = request.args.get('category', default='')
     if request.method == "GET":
         if not start_date and not end_date and not category:
-            return_json_object = jsonify(message="startDate, endDate and category are missing")
+            return_json_object = jsonify(
+                message="startDate, endDate and category are missing")
             return generate_response(return_json_object, 400)
 
         if category != '':
             sql_query = f"""
-            SELECT * FROM expenses_dev.expenses
+            SELECT * FROM {expenses_table}
             WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
             AND category='{category}'
             ORDER BY date"""
         elif category == '':
             sql_query = f"""
-            SELECT * FROM expenses_dev.expenses
+            SELECT * FROM {expenses_table}
             WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
             ORDER BY date
             """
         elif start_date == '' & end_date == '':
             sql_query = f"""
-            SELECT * FROM expenses_dev.expenses
+            SELECT * FROM {expenses_table}
             WHERE category='{category}'
             ORDER BY date
             """
         elif end_date == '':
             sql_query = f"""
-            SELECT * FROM expenses_dev.expenses
+            SELECT * FROM {expenses_table}
             WHERE (DATE(date) BETWEEN '{start_date}' AND MAX(date))
             ORDER BY date
             """
         elif start_date == '':
             sql_query = f"""
-            SELECT * FROM expenses_dev.expenses
+            SELECT * FROM {expenses_table}
             WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
             ORDER BY date
             """
-        
+
         expenses_df = pd.read_sql(sql_query, db.engine)
 
         if expenses_df.empty:
@@ -106,27 +109,28 @@ def filter_data():
         expenses_df['date'] = expenses_df['date'].dt.strftime('%Y-%m-%d')
         total = expenses_df['amount'].sum()
         data_final = json.loads(expenses_df.to_json(orient="records"))
-        return_json_object = jsonify(data={"total": total,"transactions":data_final})
+        return_json_object = jsonify(
+            data={"total": total, "transactions": data_final})
         return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_daily_amounts', methods=['GET'])
 def get_daily_amounts():
-    sql_query = """
-    SELECT date, SUM(amount) as amount FROM expenses_dev.expenses
+    sql_query = f"""
+    SELECT date, SUM(amount) as amount FROM {expenses_table}
     GROUP BY date
     ORDER BY date
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     expenses_df = convert_datetype_to_string(expenses_df, 'date')
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"dailyAmounts":data_final})
+    return_json_object = jsonify(data={"dailyAmounts": data_final})
     return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_daily_amounts/moving_average', methods=['GET'])
 def moving_average():
-    ### Pass in window=1 for example
+    # Pass in window=1 for example
     url_parameters = request.args
     window = 1
     if url_parameters:
@@ -143,7 +147,7 @@ def moving_average():
 
 @bp.route('/get_weekly_amounts', methods=['GET'])
 def get_weekly_amounts():
-    sql_query = """
+    sql_query = f"""
     SELECT
         week,
         year,
@@ -154,14 +158,14 @@ def get_weekly_amounts():
             WEEK(date) as week,
             amount
         FROM
-            expenses
+            {expenses_table}
         ) AS weekly_data
         LEFT JOIN (
         SELECT
             expense_id,
             YEAR(date) as 'year'
         FROM
-            expenses
+            {expenses_table}
         ) AS years
     ON (
         weekly_data.expense_id = years.expense_id
@@ -174,18 +178,18 @@ def get_weekly_amounts():
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"weeklyAmounts":data_final})
+    return_json_object = jsonify(data={"weeklyAmounts": data_final})
     return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_monthly_amounts', methods=['GET'])
 def get_monthly_amounts():
-    sql_query = """
+    sql_query = f"""
     SELECT 
         MONTH(date) as month, 
         YEAR(date) as year, 
         SUM(amount) as amount 
-    FROM expenses_dev.expenses
+    FROM {expenses_table}
     GROUP BY 
         MONTH(date), 
         YEAR(date)
@@ -193,19 +197,20 @@ def get_monthly_amounts():
         MONTH(date)
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
-    expenses_df['month'] = expenses_df['month'].apply(lambda x: calendar.month_name[x])
+    expenses_df['month'] = expenses_df['month'].apply(
+        lambda x: calendar.month_name[x])
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"monthlyAmounts":data_final})
+    return_json_object = jsonify(data={"monthlyAmounts": data_final})
     return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_categorical_amounts', methods=['GET'])
 def get_categorical_amount():
-    sql_query = """
-    SELECT category, SUM(amount) as amount FROM expenses_dev.expenses
+    sql_query = f"""
+    SELECT category, SUM(amount) as amount FROM {expenses_table}
     GROUP BY category
     """
     expenses_df = pd.read_sql(sql_query, db.engine)
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_response_object = jsonify(data={"categoricalAmounts":data_final})
+    return_response_object = jsonify(data={"categoricalAmounts": data_final})
     return generate_response(return_response_object, 200)
