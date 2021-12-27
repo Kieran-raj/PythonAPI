@@ -1,6 +1,8 @@
 from flask import Flask
-from api import db
-from api.expenses.endpoints import bp as expenses_blueprint
+from flask_sqlalchemy import SQLAlchemy
+
+
+db = SQLAlchemy()
 
 
 def create_app(config='api.config.DevConfig'):
@@ -9,10 +11,14 @@ def create_app(config='api.config.DevConfig'):
     app.config.from_object(config)
 
     # Registering Blueprints
+    from api.expenses.endpoints import bp as expenses_blueprint
     app.register_blueprint(expenses_blueprint)
 
     # Registering and initialising database
 
     db.init_app(app)
 
-    return app
+    with app.app_context():
+        db.create_all()
+
+        return app

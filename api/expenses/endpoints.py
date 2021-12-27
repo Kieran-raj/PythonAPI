@@ -3,14 +3,16 @@
 
 import json
 import calendar
-import re
 from flask.wrappers import Response
 from sqlalchemy import exc  # TODO: used for error handling
 import pandas as pd
 from flask import Blueprint, request, jsonify
-from api import db
+from sqlalchemy.orm import sessionmaker
+from ..app import db
 from api import chosen_config
+from ..expenses.models.expenses import Expense
 from ..expenses.helpers.functions import generate_response, convert_datetype_to_string
+from ..config import TestConfig
 
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
@@ -20,7 +22,14 @@ expenses_table = "expenses_prod.expenses"
 if config == "DevConfig":
     expenses_table = "expenses_dev.expenses"
 else:
+    database_uri = TestConfig().SQLALCHEMY_DATABASE_URI
     expenses_table = "expenses"
+
+
+# Define database engine and generate session
+
+engine = db.create_engine(database_uri, {})
+Session = sessionmaker(bind=engine)
 
 
 @bp.route('/heartbeat', methods=['GET'])
@@ -30,25 +39,25 @@ def heartbeat():
 
 @bp.route('/full_data', methods=['GET', 'POST'])
 def full_data() -> Response:
-    if request.method == 'GET':
-        sql_history = f"""
-        SELECT * FROM {expenses_table}
-        ORDER BY date;
-        """
-        expenses_df = pd.read_sql(sql_history, db.engine)
+    session = Session()
+    sql_query = session.query(Expense).statement
 
-        if expenses_df.empty:
-            return generate_response('', 204)
+    expenses_df = pd.read_sql(sql_query, engine)
 
-        expenses_df = convert_datetype_to_string(expenses_df, 'date')
-        total = expenses_df['amount'].sum()
-        data_final = json.loads(expenses_df.to_json(orient="records"))
-        return_json_object = jsonify(
-            data={"total": total, "transactions": data_final})
-        return generate_response(return_json_object, 200)
+    session.close()
 
-# TODO: Be able to pass specific years and get all data for that
-# Will probably need a new end point for that eg /full_data/year
+    if expenses_df.empty:
+        return generate_response('', 204)
+
+    expenses_df = convert_datetype_to_string(expenses_df, 'date')
+    total = expenses_df['amount'].sum()
+    data_final = json.loads(expenses_df.to_json(orient="records"))
+    return_json_object = jsonify(
+        data={"total": total, "transactions": data_final})
+    return generate_response(return_json_object, 200)
+
+    # TODO: Be able to pass specific years and get all data for that
+    # Will probably need a new end point for that eg /full_data/year
 
 
 @bp.route('/full_data/all_years', methods=['GET'])
