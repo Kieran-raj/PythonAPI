@@ -1,16 +1,17 @@
 # TODO: Add some docstrings all functions
-# TODO: Use an ORM instead of having multiple SQL databases - syntax then wont matter
 
+from datetime import datetime
 import json
 import calendar
-import re
+from operator import and_
 from flask.wrappers import Response
-from sqlalchemy import exc  # TODO: used for error handling
+from sqlalchemy import engine, exc, func, distinct # TODO: used for error handling
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
 from api import chosen_config
-from ..expenses.helpers.functions import generate_response, convert_datetype_to_string
+from api.expenses.models.expenses_model import Expenses
+from ..expenses.helpers.functions import generate_response, convert_datetype_to_string, convert_orm_object_to_dict
 
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
@@ -30,12 +31,16 @@ def heartbeat():
 
 @bp.route('/full_data', methods=['GET', 'POST'])
 def full_data() -> Response:
+    database_session = db.session()
     if request.method == 'GET':
-        sql_history = f"""
-        SELECT * FROM {expenses_table}
-        ORDER BY date;
-        """
-        expenses_df = pd.read_sql(sql_history, db.engine)
+        expenses = database_session.query(Expenses.expense_id, Expenses.date,\
+            Expenses.description, Expenses.category, Expenses.amount)\
+                .order_by(Expenses.date)
+
+        database_session.close()
+        columns = ["expense_id", "date", "description", "category", "amount"]
+        expense_dict = convert_orm_object_to_dict(expenses, columns)
+        expenses_df = pd.DataFrame.from_dict(expense_dict)
 
         if expenses_df.empty:
             return generate_response('', 204)
@@ -47,20 +52,17 @@ def full_data() -> Response:
             data={"total": total, "transactions": data_final})
         return generate_response(return_json_object, 200)
 
-# TODO: Be able to pass specific years and get all data for that
+# Be able to pass specific years and get all data for that
 # Will probably need a new end point for that eg /full_data/year
 
 
 @bp.route('/full_data/all_years', methods=['GET'])
 def full_data_all_years():
-    sql_query = f"""
-    SELECT DISTINCT YEAR(date) as years FROM {expenses_table}
-    """
-    if config == "TestConfig":
-        sql_query = f"""
-        SELECT DISTINCT strftime('%Y', date) as years FROM {expenses_table}
-        """
-    expenses_df = pd.read_sql(sql_query, db.engine)
+    database_session = db.session()
+    expenses = database_session.query(distinct(func.extract("year", Expenses.date)))
+    database_session.close()
+    expenses_dict = {'years': [i[0] for i in expenses]}
+    expenses_df = pd.DataFrame.from_dict((expenses_dict))
 
     if expenses_df.empty:
         return generate_response('', 204)
@@ -72,51 +74,34 @@ def full_data_all_years():
 
 @bp.route('/filtered_data', methods=['GET'])
 def filter_data():
-    # start, end and category
-    # start and end work
-    # TODO: Make sure that all combinations are working
-    start_date = request.args.get('startDate', default='')
-    end_date = request.args.get('endDate', default='')
+    today = datetime.today().strftime('%Y-%m-%d')
+    start_date = request.args.get('startDate', default='1900-01-01')
+    end_date = request.args.get('endDate', default=today)
     category = request.args.get('category', default='')
+    database_session = db.session()
     if request.method == "GET":
         if not start_date and not end_date and not category:
             return_json_object = jsonify(
                 message="startDate, endDate and category are missing")
+            database_session.close()
             return generate_response(return_json_object, 400)
 
+        expenses = database_session.query(Expenses.expense_id, Expenses.date,\
+            Expenses.description, Expenses.category, Expenses.amount)\
+                .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))\
+                    .order_by(Expenses.date)
+        
         if category != '':
-            sql_query = f"""
-            SELECT * FROM {expenses_table}
-            WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
-            AND category='{category}'
-            ORDER BY date"""
-        elif category == '':
-            sql_query = f"""
-            SELECT * FROM {expenses_table}
-            WHERE (DATE(date) BETWEEN '{start_date}' AND '{end_date}')
-            ORDER BY date
-            """
-        elif start_date == '' & end_date == '':
-            sql_query = f"""
-            SELECT * FROM {expenses_table}
-            WHERE category='{category}'
-            ORDER BY date
-            """
-        elif end_date == '':
-            sql_query = f"""
-            SELECT * FROM {expenses_table}
-            WHERE (DATE(date) BETWEEN '{start_date}' AND MAX(date))
-            ORDER BY date
-            """
-        elif start_date == '':
-            sql_query = f"""
-            SELECT * FROM {expenses_table}
-            WHERE (DATE(date) BETWEEN MIN(date) AND '{end_date}')
-            ORDER BY date
-            """
-
-        expenses_df = pd.read_sql(sql_query, db.engine)
-
+            expenses = database_session.query(Expenses.expense_id, Expenses.date,\
+            Expenses.description, Expenses.category, Expenses.amount)\
+                .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))\
+                    .filter(Expenses.category == category).\
+                        order_by(Expenses.date)
+        
+        columns = ["expense_id", "date", "description", "category", "amount"]
+        expense_dict = convert_orm_object_to_dict(expenses, columns)
+        expenses_df = pd.DataFrame.from_dict(expense_dict)
+        
         if expenses_df.empty:
             return generate_response('', 204)
 
@@ -130,22 +115,12 @@ def filter_data():
 
 @bp.route('/get_daily_amounts', methods=['GET'])
 def get_daily_amounts():
-    sql_query = f"""
-    SELECT date, SUM(amount) as amount FROM {expenses_table}
-    GROUP BY date
-    ORDER BY date
-    """
-    url_parameters = request.args
-    if url_parameters:
-        start_date = url_parameters.get('start_date')
-        end_date = url_parameters.get('end_date')
-        if len(url_parameters > 2):
-            return generate_response(jsonify(message='Too many parameters. Options - start_date and end_date'), 400)
-        if (start_date is None) and (end_date is None):
-            return generate_response(jsonify(message=f'Invalid parameter - {", ".join([key for key in url_parameters.keys()])}'), 400)
-
-    expenses_df = pd.read_sql(sql_query, db.engine)
-
+    database_session = db.session()
+    expenses = database_session.query(Expenses.date, func.sum(Expenses.amount).label('amount')).group_by(Expenses.date).order_by(Expenses.date)
+    database_session.close()
+    expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
+    expenses_df = pd.DataFrame.from_dict(expense_dict)
+  
     if expenses_df.empty:
         return generate_response('', 204)
 
@@ -174,66 +149,18 @@ def moving_average():
 
 @bp.route('/get_weekly_amounts', methods=['GET'])
 def get_weekly_amounts():
-    sql_query = f"""
-    SELECT
-        week,
-        year,
-        SUM(amount) as amount
-    FROM (
-        SELECT
-            expense_id,
-            WEEK(date) as week,
-            amount
-        FROM
-            {expenses_table}
-        ) AS weekly_data
-        LEFT JOIN (
-        SELECT
-            expense_id,
-            YEAR(date) as 'year'
-        FROM
-            {expenses_table}
-        ) AS years
-    ON (
-        weekly_data.expense_id = years.expense_id
-    )
-    GROUP BY
-        week,
-        year
-    ORDER BY 
-        week;
-    """
-    if config == "TestConfig":
-        sql_query = f"""
-        SELECT
-            week,
-            year,
-            SUM(amount) as amount
-        FROM (
-            SELECT
-                expenses_id,
-                strftime('%W', date) as week,
-                amount
-            FROM
-                {expenses_table}
-            ) AS weekly_data
-            LEFT JOIN (
-            SELECT
-                expenses_id,
-                strftime('%Y', date) as 'year'
-            FROM
-                {expenses_table}
-            ) AS years
-        ON (
-            weekly_data.expenses_id = years.expenses_id
-        )
-        GROUP BY
-            week,
-            year
-        ORDER BY
-            week
-        """
-    expenses_df = pd.read_sql(sql_query, db.engine)
+    database_session = db.session()
+    expenses = database_session.query(func.extract("week", Expenses.date).label("week"),\
+       func.extract("year", Expenses.date).label("year"),\
+           func.sum(Expenses.amount).label("amount"))\
+               .group_by(func.extract("week", Expenses.date),\
+                    func.extract("year", Expenses.date))\
+                        .order_by(func.extract("week", Expenses.date))
+    database_session.close()
+    chosen_columns = ["week", "year", "amount"]
+    
+    expense_dict = convert_orm_object_to_dict(expenses, chosen_columns)
+    expenses_df = pd.DataFrame.from_dict(expense_dict)
 
     if expenses_df.empty:
         return generate_response('', 204)
@@ -245,31 +172,16 @@ def get_weekly_amounts():
 
 @bp.route('/get_monthly_amounts', methods=['GET'])
 def get_monthly_amounts():
-    sql_query = f"""
-    SELECT 
-        MONTH(date) as month, 
-        YEAR(date) as year, 
-        SUM(amount) as amount 
-    FROM {expenses_table}
-    GROUP BY 
-        MONTH(date), 
-        YEAR(date)
-    ORDER BY 
-        MONTH(date)
-    """
-    if config == "TestConfig":
-        sql_query = f"""
-        SELECT
-            strftime('%m', date) as month,
-            strftime('%Y', date) as year,
-            SUM(amount) as amount
-        FROM {expenses_table}
-        GROUP BY
-            month,
-            year
-        ORDER BY month
-        """
-    expenses_df = pd.read_sql(sql_query, db.engine)
+    database_session = db.session()
+    expenses = database_session.query(func.extract("month", Expenses.date).label("month"),\
+        func.extract("year", Expenses.date).label("year"),\
+            func.sum(Expenses.amount).label("amount"))\
+                .group_by(func.extract("month", Expenses.date), func.extract("year", Expenses.date))\
+                    .order_by(func.extract("month", Expenses.date))
+    database_session.close()
+    chosen_columns = ["month", "year", "amount"]
+    expense_dict = convert_orm_object_to_dict(expenses, chosen_columns)
+    expenses_df = pd.DataFrame.from_dict(expense_dict)
 
     if expenses_df.empty:
         return generate_response('', 204)
@@ -278,16 +190,17 @@ def get_monthly_amounts():
         lambda x: calendar.month_name[int(x)])
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"monthlyAmounts": data_final})
-    return generate_response(return_json_object, 200)
+    return generate_response(return_json_object, 200)   
 
 
 @bp.route('/get_categorical_amounts', methods=['GET'])
 def get_categorical_amount():
-    sql_query = f"""
-    SELECT category, SUM(amount) as amount FROM {expenses_table}
-    GROUP BY category
-    """
-    expenses_df = pd.read_sql(sql_query, db.engine)
+    database_session = db.session()
+    expenses = database_session.query(Expenses.category, func.sum(Expenses.amount).label("amount"))\
+        .group_by(Expenses.category)
+    database_session.close()
+    expense_dict = convert_orm_object_to_dict(expenses, ["category", "amount"])
+    expenses_df = pd.DataFrame.from_dict(expense_dict)
 
     if expenses_df.empty:
         return generate_response('', 204)

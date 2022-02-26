@@ -15,4 +15,9 @@ def create_app(config='api.config.DevConfig'):
 
     db.init_app(app)
 
-    return app
+    with app.app_context():
+        from api.expenses import endpoints
+
+        db.create_all()
+
+        return app
