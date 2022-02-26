@@ -60,7 +60,6 @@ def full_data() -> Response:
 def full_data_all_years():
     database_session = db.session()
     expenses = database_session.query(distinct(func.extract("year", Expenses.date)))
-    print(expenses)
     database_session.close()
     expenses_dict = {'years': [i[0] for i in expenses]}
     expenses_df = pd.DataFrame.from_dict((expenses_dict))
