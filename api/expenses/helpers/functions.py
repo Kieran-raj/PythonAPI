@@ -1,4 +1,3 @@
-
 import pandas as pd
 from typing import List
 from flask import Response, make_response
@@ -23,4 +22,3 @@ def convert_orm_object_to_dict(data, chosen_columns: List[str]):
     for column in chosen_columns:
         expenses_dict[column] = [expense[column] for expense in data]
     return expenses_dict
-

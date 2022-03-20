@@ -1,11 +1,9 @@
-# TODO: Add some docstrings all functions
-
 from datetime import datetime
 import json
 import calendar
 from operator import and_
 from flask.wrappers import Response
-from sqlalchemy import engine, exc, func, distinct # TODO: used for error handling
+from sqlalchemy import engine, exc, func, distinct
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
@@ -16,13 +14,6 @@ from ..expenses.helpers.functions import generate_response, convert_datetype_to_
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 config = chosen_config[11:]
-
-expenses_table = "expenses_prod.expenses"
-if config == "DevConfig":
-    expenses_table = "expenses_dev.expenses"
-else:
-    expenses_table = "expenses"
-
 
 @bp.route('/heartbeat', methods=['GET'])
 def heartbeat():
@@ -51,9 +42,6 @@ def full_data() -> Response:
         return_json_object = jsonify(
             data={"total": total, "transactions": data_final})
         return generate_response(return_json_object, 200)
-
-# Be able to pass specific years and get all data for that
-# Will probably need a new end point for that eg /full_data/year
 
 
 @bp.route('/full_data/all_years', methods=['GET'])
@@ -90,18 +78,18 @@ def filter_data():
             Expenses.description, Expenses.category, Expenses.amount)\
                 .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))\
                     .order_by(Expenses.date)
-        
+
         if category != '':
             expenses = database_session.query(Expenses.expense_id, Expenses.date,\
             Expenses.description, Expenses.category, Expenses.amount)\
                 .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))\
                     .filter(Expenses.category == category).\
                         order_by(Expenses.date)
-        
+
         columns = ["expense_id", "date", "description", "category", "amount"]
         expense_dict = convert_orm_object_to_dict(expenses, columns)
         expenses_df = pd.DataFrame.from_dict(expense_dict)
-        
+
         if expenses_df.empty:
             return generate_response('', 204)
 
@@ -120,7 +108,7 @@ def get_daily_amounts():
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
     expenses_df = pd.DataFrame.from_dict(expense_dict)
-  
+
     if expenses_df.empty:
         return generate_response('', 204)
 
@@ -158,7 +146,7 @@ def get_weekly_amounts():
                         .order_by(func.extract("week", Expenses.date))
     database_session.close()
     chosen_columns = ["week", "year", "amount"]
-    
+
     expense_dict = convert_orm_object_to_dict(expenses, chosen_columns)
     expenses_df = pd.DataFrame.from_dict(expense_dict)
 

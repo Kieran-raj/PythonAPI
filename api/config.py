@@ -31,9 +31,9 @@ class TestConfig:
 
     """Set SQL_ALCHEMY Variables"""
     if platform == "linux":
-        SQLALCHEMY_DATABASE_URI = "sqlite:////home/kieran/PythonAPI/api/tests/expenses/testing_database/expenses_test.db"
+        SQLALCHEMY_DATABASE_URI = "sqlite:////home/kieran/PythonAPI/api/tests/expenses/local_database/expenses_test.db"
     else:
-        SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\testing_database\\expenses_test.db"
+        SQLALCHEMY_DATABASE_URI = "sqlite:///D:\\Projects\\PythonAPI\\api\\tests\\expenses\\local_database\\expenses_test.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 
