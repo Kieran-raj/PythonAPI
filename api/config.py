@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class ProdConfig:
     """Get environmental variables"""
     database_username = environ.get("DATABASE_USERNAME")
