@@ -9,20 +9,11 @@ from sqlalchemy import engine, exc, func, distinct # TODO: used for error handli
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
-from api import chosen_config
 from api.expenses.models.expenses_model import Expenses
 from ..expenses.helpers.functions import generate_response, convert_datetype_to_string, convert_orm_object_to_dict
 
 
 bp = Blueprint("expenses", __name__, url_prefix="/expenses")
-config = chosen_config[11:]
-
-expenses_table = "expenses_prod.expenses"
-if config == "DevConfig":
-    expenses_table = "expenses_dev.expenses"
-else:
-    expenses_table = "expenses"
-
 
 @bp.route('/heartbeat', methods=['GET'])
 def heartbeat():
@@ -120,13 +111,13 @@ def get_daily_amounts():
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
     expenses_df = pd.DataFrame.from_dict(expense_dict)
-  
+
     if expenses_df.empty:
         return generate_response('', 204)
 
     expenses_df = convert_datetype_to_string(expenses_df, 'date')
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"dailyAmounts": data_final})
+    return_json_object = jsonify(data={"transactions": data_final})
     return generate_response(return_json_object, 200)
 
 
@@ -158,7 +149,7 @@ def get_weekly_amounts():
                         .order_by(func.extract("week", Expenses.date))
     database_session.close()
     chosen_columns = ["week", "year", "amount"]
-    
+
     expense_dict = convert_orm_object_to_dict(expenses, chosen_columns)
     expenses_df = pd.DataFrame.from_dict(expense_dict)
 
@@ -189,8 +180,8 @@ def get_monthly_amounts():
     expenses_df['month'] = expenses_df['month'].apply(
         lambda x: calendar.month_name[int(x)])
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"monthlyAmounts": data_final})
-    return generate_response(return_json_object, 200)   
+    return_json_object = jsonify(data={"monthlyTransactions": data_final})
+    return generate_response(return_json_object, 200)
 
 
 @bp.route('/get_categorical_amounts', methods=['GET'])
