@@ -22,7 +22,7 @@ class ProdConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 
-class TestConfig:
+class LocalConfig:
     """Set Flask config variables"""
     ENV = 'testing'
     DEBUG = False

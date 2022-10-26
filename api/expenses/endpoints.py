@@ -1,4 +1,4 @@
-"Module that contains the end points and entry points to expenses API."
+"""Module that contains the end points and entry points to expenses API."""
 
 from datetime import datetime
 from http import HTTPStatus
@@ -25,7 +25,7 @@ bp = Blueprint("expenses", __name__, url_prefix="/expenses")
 @bp.route("/heartbeat", methods=["GET"])
 def heartbeat():
     """
-    Heartbeat endpont to test api is up and running.
+    Heartbeat endpoint to test api is up and running.
     ---
     get:
         summary: Heartbeat endpoint.
@@ -101,7 +101,7 @@ def full_data_all_years():
     expenses = database_session.query(distinct(func.extract("year", Expenses.date)))
     database_session.close()
     expenses_dict = {"years": [i[0] for i in expenses]}
-    expenses_df = pd.DataFrame.from_dict((expenses_dict))
+    expenses_df = pd.DataFrame.from_dict(expenses_dict)
 
     if expenses_df.empty:
         return generate_response("", HTTPStatus.PARTIAL_CONTENT)
