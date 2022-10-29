@@ -54,7 +54,7 @@ def full_data() -> Response:
     database_session = db.session()
     if request.method == "GET":
         expenses = database_session.query(
-            Expenses.expense_id,
+            Expenses.expenses_id,
             Expenses.date,
             Expenses.description,
             Expenses.category,
@@ -62,7 +62,7 @@ def full_data() -> Response:
         ).order_by(Expenses.date)
 
         database_session.close()
-        columns = ["expense_id", "date", "description", "category", "amount"]
+        columns = ["expenses_id", "date", "description", "category", "amount"]
         expense_dict = convert_orm_object_to_dict(expenses, columns)
         expenses_df = pd.DataFrame.from_dict(expense_dict)
 
