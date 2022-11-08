@@ -10,6 +10,7 @@ from sqlalchemy import func, distinct
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
+from api.expenses.models.categories_model import Categories
 from api.expenses.models.expenses_model import Expenses
 from api.expenses.models.full_data import FullData
 from ..expenses.helpers.functions import (
@@ -237,7 +238,7 @@ def moving_average():
     url_parameters = request.args
     window = 1
     if url_parameters:
-        window = url_parameters.get("window")
+        window = int(url_parameters.get("window"))
 
         if len(url_parameters) > 1:
             return generate_response(
@@ -252,7 +253,26 @@ def moving_average():
                 HTTPStatus.BAD_REQUEST,
             )
 
-    return_json_object = jsonify(data="Data (default window)")
+    database_session = db.session()
+    expenses = (
+        database_session.query(Expenses.date, func.sum(Expenses.amount).label("amount"))
+        .group_by(Expenses.date)
+        .order_by(Expenses.date)
+    )
+    database_session.close()
+    expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
+    expenses_df = pd.DataFrame.from_dict(expense_dict)
+    expenses_df['moving_average'] = expenses_df.rolling(window=window).mean()
+
+    if expenses_df.empty:
+        return generate_response("", HTTPStatus.PARTIAL_CONTENT)
+
+    expenses_df = convert_datetype_to_string(expenses_df, "date")
+    moving_average_df = expenses_df.drop('amount', axis=1).dropna()
+
+    data_final = json.loads(moving_average_df.to_json(orient="records")) 
+
+    return_json_object = jsonify(data={"movingAverageAmounts": data_final})
     return generate_response(return_json_object, HTTPStatus.OK)
 
 
@@ -333,6 +353,8 @@ def get_monthly_amounts():
     expenses_df["month"] = expenses_df["month"].apply(
         lambda x: calendar.month_name[int(x)]
     )
+    expenses_df['pct_change'] = round(expenses_df.groupby('year')['amount'].pct_change(), 2)
+
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_json_object = jsonify(data={"monthlyTransactions": data_final})
     return generate_response(return_json_object, HTTPStatus.OK)
@@ -359,6 +381,7 @@ def get_categorical_amount():
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["category", "amount"])
     expenses_df = pd.DataFrame.from_dict(expense_dict)
+    expenses_df['percentage'] = round(((expenses_df['amount'] / expenses_df['amount'].sum()) * 100), 2)
 
     if expenses_df.empty:
         return generate_response("", HTTPStatus.PARTIAL_CONTENT)
@@ -366,3 +389,47 @@ def get_categorical_amount():
     data_final = json.loads(expenses_df.to_json(orient="records"))
     return_response_object = jsonify(data={"categoricalAmounts": data_final})
     return generate_response(return_response_object, HTTPStatus.OK)
+
+
+@bp.route("/categories", methods=["GET", "POST", "OPTIONS"])
+def get_categories():
+    """
+    Categories endpoint
+    ---
+    get:
+        summary: Get categories endpoint
+        description: Get categories.
+        responses:
+            200:
+                description: Returns JSON object containing the categories.
+                schema: { "categories": any }
+            204: Returns empty object.
+    put:
+    """
+    database_session = db.session()
+    if request.method == "GET":
+        categories = database_session.query(
+            Categories.id,
+            Categories.category
+        )
+
+        category_dict = convert_orm_object_to_dict(categories, ["id", "category"])
+        category_df = pd.DataFrame.from_dict(category_dict)
+
+        if category_df.empty:
+            return generate_response("", HTTPStatus.PARTIAL_CONTENT)
+
+        data_final = json.loads(category_df.to_json(orient="records"))
+        return_json_object = jsonify(categories= data_final)
+        
+        return generate_response(return_json_object, HTTPStatus.OK)
+    if request.method == "POST" :
+        categories = json.loads(request.data)
+        for c in categories:
+            newCategory = Categories(category=c['category'].lower())
+            database_session.add(newCategory)
+        database_session.commit()
+        return generate_response("", HTTPStatus.CREATED, request.method)
+
+    if request.method == "OPTIONS":
+        return generate_response("", HTTPStatus.OK, request.method)

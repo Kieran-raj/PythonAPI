@@ -5,7 +5,7 @@ import pandas as pd
 from flask import Response, make_response
 
 
-def generate_response(json_object: Response, status_code: int) -> Response:
+def generate_response(json_object: Response, status_code: int, method: str = None) -> Response:
     """
     Returns reposnse.
 
@@ -18,6 +18,8 @@ def generate_response(json_object: Response, status_code: int) -> Response:
     """
     response = make_response(json_object, status_code)
     response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers['Content-Type'] = "*/*"
     return response
 
 
