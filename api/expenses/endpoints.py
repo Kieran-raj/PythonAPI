@@ -11,8 +11,7 @@ import pandas as pd
 from flask import Blueprint, request, jsonify
 from api import db
 from api.expenses.models.categories_model import Categories
-from api.expenses.models.expenses_model import Expenses
-from api.expenses.models.full_data import FullData
+from api.expenses.models.expenses_model import Expense
 from ..expenses.helpers.functions import (
     generate_response,
     convert_datetype_to_string,
@@ -55,12 +54,12 @@ def full_data() -> Response:
     database_session = db.session()
     if request.method == "GET":
         expenses = database_session.query(
-            Expenses.expenses_id,
-            Expenses.date,
-            Expenses.description,
-            Expenses.category,
-            Expenses.amount,
-        ).order_by(Expenses.date)
+            Expense.expenses_id,
+            Expense.date,
+            Expense.description,
+            Expense.category,
+            Expense.amount,
+        ).order_by(Expense.date)
 
         database_session.close()
         columns = ["expenses_id", "date", "description", "category", "amount"]
@@ -99,7 +98,7 @@ def full_data_all_years():
                 description: Returns empty object.
     """
     database_session = db.session()
-    expenses = database_session.query(distinct(func.extract("year", Expenses.date)))
+    expenses = database_session.query(distinct(func.extract("year", Expense.date)))
     database_session.close()
     expenses_dict = {"years": [i[0] for i in expenses]}
     expenses_df = pd.DataFrame.from_dict(expenses_dict)
@@ -161,28 +160,28 @@ def filter_data():
 
         expenses = (
             database_session.query(
-                Expenses.expense_id,
-                Expenses.date,
-                Expenses.description,
-                Expenses.category,
-                Expenses.amount,
+                Expense.expense_id,
+                Expense.date,
+                Expense.description,
+                Expense.category,
+                Expense.amount,
             )
-            .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))
-            .order_by(Expenses.date)
+            .filter(and_(Expense.date >= start_date, Expense.date <= end_date))
+            .order_by(Expense.date)
         )
 
         if category != "":
             expenses = (
                 database_session.query(
-                    Expenses.expense_id,
-                    Expenses.date,
-                    Expenses.description,
-                    Expenses.category,
-                    Expenses.amount,
+                    Expense.expense_id,
+                    Expense.date,
+                    Expense.description,
+                    Expense.category,
+                    Expense.amount,
                 )
-                .filter(and_(Expenses.date >= start_date, Expenses.date <= end_date))
-                .filter(Expenses.category == category)
-                .order_by(Expenses.date)
+                .filter(and_(Expense.date >= start_date, Expense.date <= end_date))
+                .filter(Expense.category == category)
+                .order_by(Expense.date)
             )
 
         columns = ["expense_id", "date", "description", "category", "amount"]
@@ -215,9 +214,9 @@ def get_daily_amounts():
     """
     database_session = db.session()
     expenses = (
-        database_session.query(Expenses.date, func.sum(Expenses.amount).label("amount"))
-        .group_by(Expenses.date)
-        .order_by(Expenses.date)
+        database_session.query(Expense.date, func.sum(Expense.amount).label("amount"))
+        .group_by(Expense.date)
+        .order_by(Expense.date)
     )
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
@@ -255,9 +254,9 @@ def moving_average():
 
     database_session = db.session()
     expenses = (
-        database_session.query(Expenses.date, func.sum(Expenses.amount).label("amount"))
-        .group_by(Expenses.date)
-        .order_by(Expenses.date)
+        database_session.query(Expense.date, func.sum(Expense.amount).label("amount"))
+        .group_by(Expense.date)
+        .order_by(Expense.date)
     )
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["date", "amount"])
@@ -293,14 +292,14 @@ def get_weekly_amounts():
     database_session = db.session()
     expenses = (
         database_session.query(
-            func.extract("week", Expenses.date).label("week"),
-            func.extract("year", Expenses.date).label("year"),
-            func.sum(Expenses.amount).label("amount"),
+            func.extract("week", Expense.date).label("week"),
+            func.extract("year", Expense.date).label("year"),
+            func.sum(Expense.amount).label("amount"),
         )
         .group_by(
-            func.extract("week", Expenses.date), func.extract("year", Expenses.date)
+            func.extract("week", Expense.date), func.extract("year", Expense.date)
         )
-        .order_by(func.extract("week", Expenses.date))
+        .order_by(func.extract("week", Expense.date))
     )
     database_session.close()
     chosen_columns = ["week", "year", "amount"]
@@ -333,14 +332,14 @@ def get_monthly_amounts():
     database_session = db.session()
     expenses = (
         database_session.query(
-            func.extract("month", Expenses.date).label("month"),
-            func.extract("year", Expenses.date).label("year"),
-            func.sum(Expenses.amount).label("amount"),
+            func.extract("month", Expense.date).label("month"),
+            func.extract("year", Expense.date).label("year"),
+            func.sum(Expense.amount).label("amount"),
         )
         .group_by(
-            func.extract("month", Expenses.date), func.extract("year", Expenses.date)
+            func.extract("month", Expense.date), func.extract("year", Expense.date)
         )
-        .order_by(func.extract("month", Expenses.date))
+        .order_by(func.extract("month", Expense.date))
     )
     database_session.close()
     chosen_columns = ["month", "year", "amount"]
@@ -376,8 +375,8 @@ def get_categorical_amount():
     """
     database_session = db.session()
     expenses = database_session.query(
-        Expenses.category, func.sum(Expenses.amount).label("amount")
-    ).group_by(Expenses.category)
+        Expense.category, func.sum(Expense.amount).label("amount")
+    ).group_by(Expense.category)
     database_session.close()
     expense_dict = convert_orm_object_to_dict(expenses, ["category", "amount"])
     expenses_df = pd.DataFrame.from_dict(expense_dict)
@@ -420,16 +419,32 @@ def get_categories():
             return generate_response("", HTTPStatus.PARTIAL_CONTENT)
 
         data_final = json.loads(category_df.to_json(orient="records"))
-        return_json_object = jsonify(categories= data_final)
+        return_json_object = jsonify(categories=data_final)
         
         return generate_response(return_json_object, HTTPStatus.OK)
-    if request.method == "POST" :
+    if request.method == "POST":
         categories = json.loads(request.data)
         for c in categories:
-            newCategory = Categories(category=c['category'].lower())
-            database_session.add(newCategory)
+            new_category = Categories(category=c['category'].lower())
+            database_session.add(new_category)
         database_session.commit()
         return generate_response("", HTTPStatus.CREATED, request.method)
 
     if request.method == "OPTIONS":
         return generate_response("", HTTPStatus.OK, request.method)
+
+
+@bp.route('/transactions', methods=["GET", "POST", "OPTIONS"])
+def transactions():
+    database_session = db.session()
+    if request.method == "POST":
+        data = json.loads(request.data)
+        print(data)
+        # new_expense = Expense(
+        #     date = data[]
+        # )
+        return generate_response("", HTTPStatus.OK, request.method)
+
+    if request.method == "OPTIONS":
+        return generate_response("", HTTPStatus.OK, request.method)
+

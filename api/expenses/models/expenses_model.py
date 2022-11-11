@@ -1,11 +1,11 @@
-"Class representing the Expenses table."
+"""Class representing the Expenses table."""
 
 from sqlalchemy.types import String, DATETIME, Integer, FLOAT
 from sqlalchemy.schema import Column
 from api.app import db
 
 
-class Expenses(db.Model):
+class Expense(db.Model):
     """
     A class to represent the Expenses Table.
 
