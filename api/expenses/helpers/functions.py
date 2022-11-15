@@ -1,4 +1,4 @@
-"Module containing generaic helper functions."
+"""Module containing generic helper functions."""
 
 from typing import Dict, List
 import pandas as pd
@@ -7,14 +7,14 @@ from flask import Response, make_response
 
 def generate_response(json_object: Response, status_code: int, method: str = None) -> Response:
     """
-    Returns reposnse.
+    Returns response.
 
             Parameters:
-                    json_object (Response): Data to return in reponse.
+                    json_object (Response): Data to return in response.
                     status_code (int): Status code for response.
 
             Returns:
-                    reponse (Response): Reponse object.
+                    response (Response): Response object.
     """
     response = make_response(json_object, status_code)
     response.headers.add("Access-Control-Allow-Origin", "*")

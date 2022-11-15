@@ -19,7 +19,7 @@ from ..expenses.helpers.functions import (
 )
 
 
-bp = Blueprint("expenses", __name__, url_prefix="/expenses")
+bp = Blueprint("expenses", __name__, url_prefix="/api/expenses")
 
 
 @bp.route("/heartbeat", methods=["GET"])
@@ -438,12 +438,16 @@ def get_categories():
 def transactions():
     database_session = db.session()
     if request.method == "POST":
-        data = json.loads(request.data)
-        print(data)
-        # new_expense = Expense(
-        #     date = data[]
-        # )
-        return generate_response("", HTTPStatus.OK, request.method)
+        data = json.loads(request.data)[0]
+        new_expense = Expense(
+            date=datetime.strptime(data['date'], "%Y-%m-%d"),
+            description=data['description'],
+            category=data['category'],
+            amount=data['amount']
+        )
+        database_session.add(new_expense)
+        database_session.commit()
+        return generate_response("", HTTPStatus.CREATED, request.method)
 
     if request.method == "OPTIONS":
         return generate_response("", HTTPStatus.OK, request.method)

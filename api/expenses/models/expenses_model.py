@@ -13,7 +13,7 @@ class Expense(db.Model):
 
     Attributes
     ----------
-    expense_id : int
+    expenses_id : int
         Unique ID for each expense record.
     date : DateTime
         Date the record was created or updated.
