@@ -227,7 +227,7 @@ def get_daily_amounts():
 
     expenses_df = convert_datetype_to_string(expenses_df, "date")
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"transactions": data_final})
+    return_json_object = jsonify(data_final)
     return generate_response(return_json_object, HTTPStatus.OK)
 
 
@@ -355,7 +355,7 @@ def get_monthly_amounts():
     expenses_df['pct_change'] = round(expenses_df.groupby('year')['amount'].pct_change(), 2)
 
     data_final = json.loads(expenses_df.to_json(orient="records"))
-    return_json_object = jsonify(data={"monthlyTransactions": data_final})
+    return_json_object = jsonify(data_final)
     return generate_response(return_json_object, HTTPStatus.OK)
 
 
@@ -419,7 +419,7 @@ def get_categories():
             return generate_response("", HTTPStatus.PARTIAL_CONTENT)
 
         data_final = json.loads(category_df.to_json(orient="records"))
-        return_json_object = jsonify(categories=data_final)
+        return_json_object = jsonify(data_final)
         
         return generate_response(return_json_object, HTTPStatus.OK)
     if request.method == "POST":
